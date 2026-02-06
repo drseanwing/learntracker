@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REdI Brand Quick Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --redi-coral: #E55B64;
+      --redi-coral-dark: #D14A53;
+      --redi-navy: #1B3A5F;
+      --redi-navy-light: #2A5080;
+      --redi-teal: #2B9E9E;
+      --redi-light-teal: #8DD4D4;
+      --redi-lime: #B8CC26;
+      --redi-sky: #5DADE2;
+      --redi-yellow: #F4D03F;
+      --redi-black: #000000;
+      --redi-dark-gray: #333333;
+      --redi-medium-gray: #666666;
+      --redi-light-gray: #F5F5F5;
+      --redi-white: #FFFFFF;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--redi-light-gray);
+      color: var(--redi-dark-gray);
+      line-height: 1.6;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, var(--redi-navy) 0%, var(--redi-navy-light) 100%);
+      color: white;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+    
+    .header p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+    
+    .gradient-bar {
+      height: 8px;
+      background: linear-gradient(90deg, var(--redi-lime), var(--redi-teal), var(--redi-navy));
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--redi-navy);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 3px solid var(--redi-coral);
+      display: inline-block;
+    }
+    
+    /* Logo Section */
+    .logo-display {
+      background: white;
+      padding: 3rem;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #e0e0e0;
+      margin-bottom: 1rem;
+    }
+    
+    .logo-text {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 4rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    
+    .logo-text .r { color: var(--redi-black); }
+    .logo-text .ed { color: var(--redi-coral); }
+    .logo-text .i { color: var(--redi-black); }
+    
+    .logo-tagline {
+      font-size: 0.9rem;
+      color: var(--redi-medium-gray);
+      margin-top: 0.5rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    
+    .logo-reversed {
+      background: var(--redi-navy);
+    }
+    
+    .logo-reversed .logo-text .r,
+    .logo-reversed .logo-text .i { color: white; }
+    .logo-reversed .logo-tagline { color: rgba(255,255,255,0.8); }
+    
+    /* Color Palette */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+    
+    .color-swatch {
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .color-preview {
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .color-info {
+      padding: 0.75rem;
+      background: white;
+    }
+    
+    .color-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--redi-navy);
+    }
+    
+    .color-hex {
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: var(--redi-medium-gray);
+      cursor: pointer;
+    }
+    
+    .color-hex:hover {
+      color: var(--redi-coral);
+    }
+    
+    /* Typography */
+    .type-sample {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .type-sample:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    .type-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--redi-medium-gray);
+      margin-bottom: 0.5rem;
+    }
+    
+    .type-h1 { font-size: 2.5rem; font-weight: 700; color: var(--redi-navy); line-height: 1.2; }
+    .type-h2 { font-size: 2rem; font-weight: 600; color: var(--redi-navy); line-height: 1.25; }
+    .type-h3 { font-size: 1.5rem; font-weight: 600; color: var(--redi-navy); line-height: 1.3; }
+    .type-body { font-size: 1rem; line-height: 1.6; }
+    .type-display { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 0.05em; color: var(--redi-navy); }
+    
+    /* Buttons */
+    .button-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    
+    .btn-primary {
+      background: var(--redi-coral);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--redi-coral-dark); }
+    
+    .btn-secondary {
+      background: var(--redi-navy);
+      color: white;
+    }
+    .btn-secondary:hover { background: var(--redi-navy-light); }
+    
+    .btn-teal {
+      background: var(--redi-teal);
+      color: white;
+    }
+    
+    .btn-outline {
+      background: transparent;
+      border-color: var(--redi-coral);
+      color: var(--redi-coral);
+    }
+    .btn-outline:hover {
+      background: var(--redi-coral);
+      color: white;
+    }
+    
+    .btn-ghost {
+      background: transparent;
+      color: var(--redi-coral);
+    }
+    .btn-ghost:hover {
+      background: rgba(229, 91, 100, 0.1);
+    }
+    
+    /* Cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .card-accent-coral { border-top: 4px solid var(--redi-coral); }
+    .card-accent-navy { border-top: 4px solid var(--redi-navy); }
+    .card-accent-teal { border-top: 4px solid var(--redi-teal); }
+    
+    .card-image {
+      height: 120px;
+      background: linear-gradient(135deg, var(--redi-light-teal), var(--redi-teal));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+    
+    .card-body {
+      padding: 1.25rem;
+    }
+    
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--redi-navy);
+      margin-bottom: 0.5rem;
+    }
+    
+    .card-text {
+      font-size: 0.9rem;
+      color: var(--redi-medium-gray);
+      margin-bottom: 1rem;
+    }
+    
+    .card-link {
+      color: var(--redi-coral);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+    }
+    
+    .card-link:hover {
+      text-decoration: underline;
+    }
+    
+    /* Badges */
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 999px;
+    }
+    
+    .badge-coral { background: var(--redi-coral); color: white; }
+    .badge-navy { background: var(--redi-navy); color: white; }
+    .badge-teal { background: var(--redi-teal); color: white; }
+    .badge-lime { background: var(--redi-lime); color: var(--redi-navy); }
+    .badge-outline { background: transparent; border: 1px solid var(--redi-coral); color: var(--redi-coral); }
+    
+    /* Alerts */
+    .alert {
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      border-left: 4px solid;
+    }
+    
+    .alert-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    
+    .alert-info {
+      background: #D1ECF1;
+      border-color: #17A2B8;
+      color: #0c5460;
+    }
+    
+    .alert-success {
+      background: #D4EDDA;
+      border-color: #28A745;
+      color: #155724;
+    }
+    
+    .alert-warning {
+      background: #FFF3CD;
+      border-color: #FFC107;
+      color: #856404;
+    }
+    
+    .alert-error {
+      background: #F8D7DA;
+      border-color: #DC3545;
+      color: #721c24;
+    }
+    
+    /* Sub-brands */
+    .subbrand-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .subbrand-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      text-align: center;
+      color: white;
+    }
+    
+    .subbrand-als { background: var(--redi-navy); }
+    .subbrand-react { background: var(--redi-coral); }
+    .subbrand-rash { background: var(--redi-sky); }
+    
+    .subbrand-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    
+    .subbrand-full {
+      font-size: 0.8rem;
+      opacity: 0.9;
+    }
+    
+    /* Code blocks */
+    .code-block {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+    
+    .code-block .comment { color: #6a9955; }
+    .code-block .property { color: #9cdcfe; }
+    .code-block .value { color: #ce9178; }
+    
+    /* Spacing reference */
+    .spacing-demo {
+      display: flex;
+      align-items: flex-end;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .space-box {
+      background: var(--redi-light-teal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--redi-navy);
+    }
+    
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--redi-medium-gray);
+      font-size: 0.85rem;
+    }
+    
+    .footer a {
+      color: var(--redi-coral);
+    }
+    
+    /* Copy notification */
+    .copy-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--redi-navy);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .copy-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    
+    @media (max-width: 768px) {
+      .header h1 { font-size: 2rem; }
+      .logo-text { font-size: 2.5rem; }
+      .container { padding: 1rem; }
+      .section { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>REdI BRAND QUICK REFERENCE</h1>
+    <p>Resuscitation EDucation Initiative — Visual Style Guide</p>
+  </header>
+  <div class="gradient-bar"></div>
+  
+  <div class="container">
+    
+    <!-- Logo Section -->
+    <section class="section">
+      <h2 class="section-title">Logo</h2>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="logo-display">
+          <div class="logo-text">
+            <span class="r">R</span><span class="ed">Ed</span><span class="i">I</span>
+          </div>
+          <div class="logo-tagline">Resuscitation EDucation Initiative</div>
+        </div>
+        <div class="logo-display logo-reversed">
+          <div class="logo-text">
+            <span class="r">R</span><span class="ed">Ed</span><span class="i">I</span>
+          </div>
+          <div class="logo-tagline">Resuscitation EDucation Initiative</div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Color Palette -->
+    <section class="section">
+      <h2 class="section-title">Color Palette</h2>
+      
+      <h3 style="font-size: 1rem; color: var(--redi-medium-gray); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.1em;">Primary Colors</h3>
+      <div class="color-grid" style="margin-bottom: 2rem;">
+        <div class="color-swatch">
+          <div class="color-preview" style="background: #E55B64; color: white;">Aa</div>
+          <div class="color-info">
+            <div class="color-name">REdI Coral</div>
+            <div class="color-hex" onclick="copyColor('#E55B64')">#E55B64</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-preview" style="background: #1B3A5F; color: white;">Aa</div>
+          <div class="color-info">
+            <div class="color-name">REdI Navy</div>
+            <div class="color-hex" onclick="copyColor('#1B3A5F')">#1B3A5F</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-preview" style="background: #2B9E9E; color: white;">Aa</div>
+          <div class="color-info">
+            <div class="color-name">REdI Teal</div>
+            <div class="color-hex" onclick="copyColor('#2B9E9E')">#2B9E9E</div>
+          </div>
+        </div>
+      </div>
+      
+      <h3 style="font-size: 1rem; color: var(--redi-medium-gray); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.1em;">Secondary Colors</h3>
+      <div class="color-grid">
+        <div class="color-swatch">
+          <div class="color-preview" style="background: #8DD4D4; color: #1B3A5F;">Aa</div>
+          <div class="color-info">
+            <div class="color-name">Light Teal</div>
+            <div class="color-hex" onclick="copyColor('#8DD4D4')">#8DD4D4</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-preview" style="background: #B8CC26; color: #1B3A5F;">Aa</div>
+          <div class="color-info">
+            <div class="color-name">Lime Green</div>
+            <div class="color-hex" onclick="copyColor('#B8CC26')">#B8CC26</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-preview" style="background: #5DADE2; color: white;">Aa</div>
+          <div class="color-info">
+            <div class="color-name">Sky Blue</div>
+            <div class="color-hex" onclick="copyColor('#5DADE2')">#5DADE2</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-preview" style="background: #F4D03F; color: #1B3A5F;">Aa</div>
+          <div class="color-info">
+            <div class="color-name">Warm Yellow</div>
+            <div class="color-hex" onclick="copyColor('#F4D03F')">#F4D03F</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Typography -->
+    <section class="section">
+      <h2 class="section-title">Typography</h2>
+      
+      <div class="type-sample">
+        <div class="type-label">Display / Bebas Neue</div>
+        <div class="type-display">READY TO RESPOND?</div>
+      </div>
+      
+      <div class="type-sample">
+        <div class="type-label">H1 / Montserrat Bold 40px</div>
+        <div class="type-h1">Advanced Life Support Training</div>
+      </div>
+      
+      <div class="type-sample">
+        <div class="type-label">H2 / Montserrat SemiBold 32px</div>
+        <div class="type-h2">Recognition & Response to Deterioration</div>
+      </div>
+      
+      <div class="type-sample">
+        <div class="type-label">H3 / Montserrat SemiBold 24px</div>
+        <div class="type-h3">Multidisciplinary Education Programs</div>
+      </div>
+      
+      <div class="type-sample">
+        <div class="type-label">Body / Montserrat Regular 16px</div>
+        <div class="type-body">The Resuscitation Education Initiative (REdI) delivers centrally coordinated, multidisciplinary education programs for resuscitation and clinical deterioration response. Our courses are designed for healthcare professionals across all disciplines.</div>
+      </div>
+    </section>
+    
+    <!-- Buttons -->
+    <section class="section">
+      <h2 class="section-title">Buttons</h2>
+      <div class="button-grid">
+        <button class="btn btn-primary">Primary Action</button>
+        <button class="btn btn-secondary">Secondary</button>
+        <button class="btn btn-teal">Teal Button</button>
+        <button class="btn btn-outline">Outline</button>
+        <button class="btn btn-ghost">Ghost Button</button>
+      </div>
+    </section>
+    
+    <!-- Cards -->
+    <section class="section">
+      <h2 class="section-title">Cards</h2>
+      <div class="card-grid">
+        <div class="card card-accent-coral">
+          <div class="card-image">🫀</div>
+          <div class="card-body">
+            <h3 class="card-title">ALS Provider Course</h3>
+            <p class="card-text">Advanced Life Support certification for medical and nursing staff.</p>
+            <a href="#" class="card-link">Learn more →</a>
+          </div>
+        </div>
+        <div class="card card-accent-navy">
+          <div class="card-image" style="background: linear-gradient(135deg, #1B3A5F, #2A5080);">🧠</div>
+          <div class="card-body">
+            <h3 class="card-title">ReACT Training</h3>
+            <p class="card-text">Response to Acute Crisis Training - non-technical skills for teams.</p>
+            <a href="#" class="card-link">Learn more →</a>
+          </div>
+        </div>
+        <div class="card card-accent-teal">
+          <div class="card-image" style="background: linear-gradient(135deg, var(--redi-sky), #5DADE2);">💉</div>
+          <div class="card-body">
+            <h3 class="card-title">RASH Program</h3>
+            <p class="card-text">Response to Anaphylaxis & Severe Hypersensitivity training.</p>
+            <a href="#" class="card-link">Learn more →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Badges -->
+    <section class="section">
+      <h2 class="section-title">Badges</h2>
+      <div class="badge-row">
+        <span class="badge badge-coral">ALS Certified</span>
+        <span class="badge badge-navy">Instructor</span>
+        <span class="badge badge-teal">ReACT</span>
+        <span class="badge badge-lime">New Course</span>
+        <span class="badge badge-outline">Coming Soon</span>
+      </div>
+    </section>
+    
+    <!-- Alerts -->
+    <section class="section">
+      <h2 class="section-title">Alerts</h2>
+      <div class="alert alert-info">
+        <div class="alert-title">Information</div>
+        <div>Pre-reading must be completed before attending the workshop.</div>
+      </div>
+      <div class="alert alert-success">
+        <div class="alert-title">Success</div>
+        <div>Your certification has been recorded in TMS.</div>
+      </div>
+      <div class="alert alert-warning">
+        <div class="alert-title">Warning</div>
+        <div>Your ALS certification expires in 30 days.</div>
+      </div>
+      <div class="alert alert-error">
+        <div class="alert-title">Alert</div>
+        <div>This course is fully booked. Please select another date.</div>
+      </div>
+    </section>
+    
+    <!-- Sub-brands -->
+    <section class="section">
+      <h2 class="section-title">Sub-Brands</h2>
+      <div class="subbrand-grid">
+        <div class="subbrand-card subbrand-als">
+          <div class="subbrand-name">ALS</div>
+          <div class="subbrand-full">Advanced Life Support - Adult</div>
+        </div>
+        <div class="subbrand-card subbrand-react">
+          <div class="subbrand-name">ReACT</div>
+          <div class="subbrand-full">Response to Acute Crisis Training</div>
+        </div>
+        <div class="subbrand-card subbrand-rash">
+          <div class="subbrand-name">RASH</div>
+          <div class="subbrand-full">Response to Anaphylaxis & Severe Hypersensitivity</div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- CSS Variables Reference -->
+    <section class="section">
+      <h2 class="section-title">CSS Variables</h2>
+      <div class="code-block">
+<span class="comment">/* Primary Colors */</span>
+<span class="property">--redi-coral:</span> <span class="value">#E55B64</span>;
+<span class="property">--redi-navy:</span> <span class="value">#1B3A5F</span>;
+<span class="property">--redi-teal:</span> <span class="value">#2B9E9E</span>;
+
+<span class="comment">/* Secondary Colors */</span>
+<span class="property">--redi-light-teal:</span> <span class="value">#8DD4D4</span>;
+<span class="property">--redi-lime:</span> <span class="value">#B8CC26</span>;
+<span class="property">--redi-sky:</span> <span class="value">#5DADE2</span>;
+<span class="property">--redi-yellow:</span> <span class="value">#F4D03F</span>;
+
+<span class="comment">/* Typography */</span>
+<span class="property">--font-primary:</span> <span class="value">'Montserrat', sans-serif</span>;
+<span class="property">--font-display:</span> <span class="value">'Bebas Neue', sans-serif</span>;
+      </div>
+    </section>
+    
+  </div>
+  
+  <footer class="footer">
+    <p>REdI Brand Guidelines v1.0 | January 2026</p>
+    <p>Resuscitation Education Initiative — Metro North Health</p>
+    <p><a href="mailto:redi@health.qld.gov.au">redi@health.qld.gov.au</a></p>
+  </footer>
+  
+  <div class="copy-toast" id="copyToast">Copied to clipboard!</div>
+  
+  <script>
+    function copyColor(color) {
+      navigator.clipboard.writeText(color).then(() => {
+        const toast = document.getElementById('copyToast');
+        toast.textContent = `${color} copied!`;
+        toast.classList.add('show');
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
