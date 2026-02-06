@@ -1,0 +1,1421 @@
+{
+  "metadata": {
+    "project": "Clinical Education Impact Registry (CEIR)",
+    "version": "1.0",
+    "generated": "2026-02-06",
+    "source": "CEIR-implementation-plan.md v1.0",
+    "total_phases": 5,
+    "notes": "Tasks are grouped into parallel execution groups within each phase. Dependencies reference task IDs. Checkpoint reviews gate phase transitions."
+  },
+  "tasks": [
+    {
+      "id": "0.1",
+      "task": "Initialise Git repository with branch strategy",
+      "context": "Create GitHub repo with main/develop branches, .gitignore for Node/TypeScript/Power Platform artifacts, branch protection rules on main. Ref: Section 15.3 Version Control.",
+      "success_criteria": "Repository exists with main and develop branches, .gitignore committed, branch protection enabled requiring PR review.",
+      "dependencies": [],
+      "parallel_group": "P0-INFRA"
+    },
+    {
+      "id": "0.2",
+      "task": "Create repository folder structure",
+      "context": "Create directory layout per Section 6.1: src/components/{layout,dashboard,intervention,event,session,feedback,issues,evaluation,reporting,shared}, src/services/dataverse, src/services/reporting, src/hooks, src/types, src/constants, src/utils, src/styles, docs/, docs/flows/. Include placeholder README.md.",
+      "success_criteria": "All directories exist. README.md contains project name, brief description, and placeholder sections for setup, architecture, deployment.",
+      "dependencies": ["0.1"],
+      "parallel_group": "P0-INFRA"
+    },
+    {
+      "id": "0.3",
+      "task": "Create Dataverse solution in development environment",
+      "context": "Create unmanaged solution named 'ClinicalEducationImpactRegistry' with publisher prefix 'redi'. Ref: Section 15.1 Solution Strategy, Section 5.1 naming conventions.",
+      "success_criteria": "Solution visible in Power Apps maker portal with correct publisher prefix 'redi_' applied to all components.",
+      "dependencies": [],
+      "parallel_group": "P0-INFRA"
+    },
+    {
+      "id": "0.4",
+      "task": "Configure Dataverse environment variables",
+      "context": "Create environment variables: redi_SurveySecret (secret type, generate HMAC key), redi_SurveyServeFlowUrl (text, placeholder), redi_ReportTemplateLibrary (text, SharePoint path placeholder), redi_AdminEmail (text). Ref: Sections 8.2, 15.1.",
+      "success_criteria": "Four environment variables created in the solution with appropriate types and placeholder values.",
+      "dependencies": ["0.3"],
+      "parallel_group": "P0-INFRA"
+    },
+    {
+      "id": "0.5",
+      "task": "Create initial documentation files",
+      "context": "Create docs/data-dictionary.md, docs/decisions.md (seed with ADR-001 through ADR-005 from implementation plan), docs/runbook.md (placeholder), docs/user-guide.md (placeholder). Ref: Section 16.1 Maintained Documents.",
+      "success_criteria": "All four documents exist in docs/ with correct headers. decisions.md contains all 5 ADRs from the implementation plan.",
+      "dependencies": ["0.2"],
+      "parallel_group": "P0-INFRA"
+    },
+
+    {
+      "id": "1.1.a",
+      "task": "Create Dataverse global Choice definitions",
+      "context": "Create global OptionSets: redi_LikertScale5 (1-5), redi_StatusGeneric (Draft/Active/Completed/Cancelled), redi_SeverityLevel (Low/Medium/High/Critical). Ref: Section 4.3.",
+      "success_criteria": "Three global choices exist in solution with correct values and labels.",
+      "dependencies": ["0.3"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.b",
+      "task": "Create Intervention table with all columns",
+      "context": "Create redi_intervention table (User ownership, change tracking ON, audit ON). Add all columns per Section 4.2 Intervention table definition: name, description, type, status, phase, priority, targetunit, targetfacility, learningneedsanalysis, interventiondesign (multi-select), endorsement, plannedstartdate, plannedenddate, actualstartdate, actualenddate, planninghours, deliveryhours, followuphours, overallvaluerating, overallvaluenotes. All local Choice columns with values per spec.",
+      "success_criteria": "Table exists with all 20+ columns, correct data types, local choices populated, ownership type is User, change tracking and audit enabled.",
+      "dependencies": ["1.1.a"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.c",
+      "task": "Create Event table with all columns",
+      "context": "Create redi_event table (Organisation ownership, change tracking ON, audit OFF). Columns per Section 4.2: name, description, eventtype (local choice), status (local choice), targetaudience (multi-select choice), estimateddurationmins. Lookup to Intervention. Ref: Appendix A for config settings.",
+      "success_criteria": "Table exists with all columns, Intervention lookup configured, cascade rules per Appendix A (Delete=Cascade, Assign=Cascade, Share=Cascade, Reparent=Cascade).",
+      "dependencies": ["1.1.b"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.d",
+      "task": "Create Session table with all columns",
+      "context": "Create redi_session table (Organisation ownership, change tracking ON, audit ON). Columns per Section 4.2: sessiondatetime, location, status (local choice), actualdurationmins, participantcount, engagementrating, facilitatornotes, surveyurl, surveyqrdata, surveyactive. Lookup to Event. Cascade rules per Appendix A.",
+      "success_criteria": "Table exists with all columns, Event lookup with cascade delete, surveyactive defaults to false.",
+      "dependencies": ["1.1.c"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.e",
+      "task": "Create Person table with all columns",
+      "context": "Create redi_person table (Organisation ownership, change tracking ON, audit OFF). Columns per Section 4.2: displayname, email, role (local choice with values: Consultant, Registrar, RMO, Nurse RN, Nurse EN, NUM, CNE, CNS, CNC, Allied Health, Student, Other), department, facility, isinternal.",
+      "success_criteria": "Table exists with all columns, role choice has all 12 values.",
+      "dependencies": ["1.1.a"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.f",
+      "task": "Create SessionAttendance junction table",
+      "context": "Create redi_sessionattendance table (Organisation ownership, no change tracking, no audit). Columns: sessionid (lookup Session), personid (lookup Person), attendancerole (choice: Participant/Facilitator/Observer/Confederate), attended (boolean, default true). Cascade rules per Appendix A.",
+      "success_criteria": "Table exists with both lookups, cascade delete from Session, no cascade from Person.",
+      "dependencies": ["1.1.d", "1.1.e"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.g",
+      "task": "Create Feedback table with all columns",
+      "context": "Create redi_feedback table (Organisation ownership, change tracking ON, audit ON). Columns per Section 4.2: sessionid (lookup), personid (lookup, nullable), feedbacktype (choice), isanonymous (boolean), overallrating (choice 1-5), relevancerating (choice 1-5), confidencechange (choice: Much less/Less/No change/More/Much more), wouldrecommend (boolean), freetextcomment (multiline 500), submittedon (datetime), source (choice: In-app/QR Survey). Cascade from Session per Appendix A.",
+      "success_criteria": "Table exists with all columns, Session lookup with cascade delete, Person lookup nullable.",
+      "dependencies": ["1.1.d", "1.1.e"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.h",
+      "task": "Create Issue table with all columns",
+      "context": "Create redi_issue table (Organisation ownership, change tracking ON, audit ON). Columns per Section 4.2: sessionid (lookup), title, description, category (9-value choice), severity (use global redi_SeverityLevel), status (6-value local choice), identifiedby (lookup Person), identifiedon, reportedto, reportedvia (choice), riskmanreference. Cascade from Session: RemoveLink on delete per Appendix A.",
+      "success_criteria": "Table exists with all columns, Session lookup with RemoveLink on delete, severity uses global choice.",
+      "dependencies": ["1.1.d", "1.1.e"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.i",
+      "task": "Create CorrectiveAction table with all columns",
+      "context": "Create redi_correctiveaction table (Organisation ownership, change tracking ON, audit ON). Columns per Section 4.2: issueid (lookup), title, actiontype (8-value choice), assignedto, status (5-value choice: Pending/In progress/Completed/Verified/Overdue), duedate, completeddate, evidence, verifiedby. Cascade from Issue per Appendix A.",
+      "success_criteria": "Table exists with all columns, Issue lookup with cascade delete.",
+      "dependencies": ["1.1.h"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.j",
+      "task": "Create Tag table",
+      "context": "Create redi_tag table (Organisation ownership, no change tracking, no audit). Columns: name (text 100), category (choice: Topic/Skill/Domain/Clinical area/Framework/Custom). Ref: Section 4.2.",
+      "success_criteria": "Table exists with name and category columns, category choice has 6 values.",
+      "dependencies": ["1.1.a"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.k",
+      "task": "Create InterventionTag junction table",
+      "context": "Create redi_interventiontag table (Organisation ownership, no change tracking, no audit). Lookups: interventionid → Intervention, tagid → Tag. Cascade delete from Intervention per Appendix A.",
+      "success_criteria": "Table exists with both lookups, cascade delete from Intervention.",
+      "dependencies": ["1.1.b", "1.1.j"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.l",
+      "task": "Create InterventionStakeholder junction table",
+      "context": "Create redi_interventionstakeholder table (Organisation ownership, no change tracking, no audit). Columns: interventionid (lookup), personid (lookup), engagementtype (choice: Consulted/Endorsed/Co-designed/Informed/Requested/Approved), notes (text 500). Cascade from Intervention per Appendix A.",
+      "success_criteria": "Table exists with all columns and lookups, cascade delete from Intervention.",
+      "dependencies": ["1.1.b", "1.1.e"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.m",
+      "task": "Create InterventionEquipment table",
+      "context": "Create redi_interventionequipment table (Organisation ownership). Columns per Section 4.2: interventionid (lookup), equipmentname, category (9-value choice), quantity, source (5-value choice), notes. Cascade from Intervention.",
+      "success_criteria": "Table exists with all columns and lookups, cascade delete from Intervention.",
+      "dependencies": ["1.1.b"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.n",
+      "task": "Create InterventionBarrier table",
+      "context": "Create redi_interventionbarrier table (Organisation ownership). Columns per Section 4.2: interventionid (lookup), barriertype (9-value choice), impact (5-value choice), notes. Cascade from Intervention.",
+      "success_criteria": "Table exists with all columns, cascade delete from Intervention.",
+      "dependencies": ["1.1.b"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.o",
+      "task": "Create Evaluation table",
+      "context": "Create redi_evaluation table (Organisation ownership, change tracking ON, no audit). Columns per Section 4.2: interventionid (lookup), kirkpatricklevel (4-value choice: L1-L4), method (9-value choice), findings (multiline), evidenceofimpact (4-value choice), evaluationdate, evaluator. Cascade from Intervention.",
+      "success_criteria": "Table exists with all columns, cascade delete from Intervention.",
+      "dependencies": ["1.1.b"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.p",
+      "task": "Create ChangeImplemented table",
+      "context": "Create redi_changeimplemented table (Organisation ownership, change tracking ON, no audit). Columns per Section 4.2: interventionid (lookup), changetype (8-value choice), description (multiline), implementeddate, status (5-value choice), monitoringmethod. Cascade from Intervention.",
+      "success_criteria": "Table exists with all columns, cascade delete from Intervention.",
+      "dependencies": ["1.1.b"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.q",
+      "task": "Create AppLog table",
+      "context": "Create redi_applog table (Organisation ownership, no change tracking, no audit). Columns per Section 13.1: level (choice: DEBUG/INFO/WARN/ERROR), context (text 200), message (text 2000), data (multiline text), userid (text 200), correlationid (text 100), timestamp (datetime).",
+      "success_criteria": "Table exists with all columns for application telemetry logging.",
+      "dependencies": ["0.3"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.1.r",
+      "task": "Create FlowLog table",
+      "context": "Create redi_flowlog table (Organisation ownership, no change tracking, no audit). Columns per Section 13.3: flowname (text), runid (text), action (text), status (choice: Success/Failure), details (multiline), timestamp (datetime).",
+      "success_criteria": "Table exists with all columns for Power Automate flow telemetry.",
+      "dependencies": ["0.3"],
+      "parallel_group": "P1A-SCHEMA"
+    },
+    {
+      "id": "1.2.a",
+      "task": "Configure rollup columns on Intervention table",
+      "context": "Add rollup columns per Section 4.4: redi_totalsessions (COUNT Sessions across Events), redi_totalparticipants (COUNT distinct SessionAttendance where role=Participant), redi_avgfeedbackrating (AVG Feedback.overallrating), redi_openissuecount (COUNT Issues where status != Resolved), redi_openactioncount (COUNT CorrectiveActions where status != Completed/Verified).",
+      "success_criteria": "Five rollup columns configured on Intervention table with correct aggregation logic across related tables.",
+      "dependencies": ["1.1.b", "1.1.d", "1.1.f", "1.1.g", "1.1.h", "1.1.i"],
+      "parallel_group": "P1B-SCHEMA-ROLLUPS"
+    },
+    {
+      "id": "1.2.b",
+      "task": "Configure rollup columns on Session table",
+      "context": "Add rollup columns per Section 4.4: redi_feedbackcount (COUNT related Feedback), redi_avgrating (AVG related Feedback.overallrating).",
+      "success_criteria": "Two rollup columns on Session table calculating from related Feedback records.",
+      "dependencies": ["1.1.d", "1.1.g"],
+      "parallel_group": "P1B-SCHEMA-ROLLUPS"
+    },
+    {
+      "id": "1.2.c",
+      "task": "Configure rollup column on Issue table",
+      "context": "Add rollup column per Section 4.4: redi_openactioncount (COUNT CorrectiveActions where status != Completed).",
+      "success_criteria": "Rollup column on Issue table calculating open corrective action count.",
+      "dependencies": ["1.1.h", "1.1.i"],
+      "parallel_group": "P1B-SCHEMA-ROLLUPS"
+    },
+    {
+      "id": "1.2.d",
+      "task": "Configure Dataverse business rules for date validation",
+      "context": "Create business rules per Section 14.3: Intervention end date >= start date (both planned and actual), Session datetime required when status changes to Scheduled or later. Apply as Organisation-scoped rules.",
+      "success_criteria": "Business rules fire on save and prevent invalid date combinations with user-facing error messages.",
+      "dependencies": ["1.1.b", "1.1.d"],
+      "parallel_group": "P1B-SCHEMA-ROLLUPS"
+    },
+    {
+      "id": "1.2.e",
+      "task": "Create Educator security role",
+      "context": "Create security role 'CEIR Educator' per Section 10.1: Full CRUD on own Intervention records, Organisation-level read on Event/Session/Feedback/Issue/CorrectiveAction/Person/Tag and all junction tables. Create/Read/Write on AppLog, FlowLog. Ref: Section 10.2 Phase 1 implementation.",
+      "success_criteria": "Security role exists in solution, assigned to the development user, provides owner-scoped Intervention CRUD and organisation-scoped read on child tables.",
+      "dependencies": ["1.1.b", "1.1.c", "1.1.d", "1.1.e", "1.1.f", "1.1.g", "1.1.h", "1.1.i", "1.1.j", "1.1.k", "1.1.l", "1.1.m", "1.1.n", "1.1.o", "1.1.p", "1.1.q", "1.1.r"],
+      "parallel_group": "P1B-SCHEMA-ROLLUPS"
+    },
+    {
+      "id": "1.2.f",
+      "task": "Export Dataverse solution to Git",
+      "context": "Export unmanaged solution ZIP from maker portal. Commit to Git repo under /solution/ directory. Document export process in docs/runbook.md. Ref: Section 15.3.",
+      "success_criteria": "Solution ZIP committed to develop branch. Runbook contains step-by-step export and commit instructions.",
+      "dependencies": ["1.2.a", "1.2.b", "1.2.c", "1.2.d", "1.2.e"],
+      "parallel_group": "P1B-SCHEMA-ROLLUPS"
+    },
+    {
+      "id": "1.2.g",
+      "task": "Update data dictionary documentation",
+      "context": "Populate docs/data-dictionary.md with all table definitions, column specs, choice values, relationships, and cascade rules from the implemented schema. Cross-reference Section 4.2, 4.3, 4.4, Appendix A.",
+      "success_criteria": "Data dictionary matches implemented Dataverse schema exactly. All tables, columns, choices, and relationships documented.",
+      "dependencies": ["1.2.f"],
+      "parallel_group": "P1B-SCHEMA-ROLLUPS"
+    },
+
+    {
+      "id": "1.3.a",
+      "task": "Scaffold Code App project",
+      "context": "Initialise PowerApps Code App project using pac CLI or Code Apps template. Configure package.json with project metadata, TypeScript, React, Fluent UI v9 dependencies. Ref: Sections 6.1, ADR-001, ADR-004. Dependencies: @fluentui/react-components, @microsoft/power-apps SDK.",
+      "success_criteria": "Project builds and runs locally (or in Code Apps preview). TypeScript strict mode enabled. Fluent UI v9 imported. Empty App.tsx renders.",
+      "dependencies": ["0.2"],
+      "parallel_group": "P1C-APP-SCAFFOLD"
+    },
+    {
+      "id": "1.3.b",
+      "task": "Configure TypeScript compiler options",
+      "context": "Set up tsconfig.json per Section 12.1: strict mode true, no implicit any, explicit return types enforcement via ESLint. Configure path aliases for src/. Ref: Section 12.1 TypeScript standards.",
+      "success_criteria": "tsconfig.json has strict:true, noImplicitAny:true. Path aliases resolve correctly (e.g., @/components, @/services).",
+      "dependencies": ["1.3.a"],
+      "parallel_group": "P1C-APP-SCAFFOLD"
+    },
+    {
+      "id": "1.3.c",
+      "task": "Configure ESLint with TypeScript rules",
+      "context": "Set up .eslintrc.json with @typescript-eslint/recommended, react-hooks rules, explicit-function-return-type rule. Add lint script to package.json. Ref: Section 12.1.",
+      "success_criteria": "ESLint runs without errors on scaffold code. Rules enforce explicit return types on exported functions and no-any.",
+      "dependencies": ["1.3.b"],
+      "parallel_group": "P1C-APP-SCAFFOLD"
+    },
+    {
+      "id": "1.3.d",
+      "task": "Configure Vitest test framework",
+      "context": "Install and configure Vitest with React Testing Library and MSW (mock service worker). Create vitest.config.ts. Add test script to package.json. Ref: Section 14.1.",
+      "success_criteria": "A trivial test file passes via 'npm test'. Vitest configured with jsdom environment for React component testing.",
+      "dependencies": ["1.3.b"],
+      "parallel_group": "P1C-APP-SCAFFOLD"
+    },
+    {
+      "id": "1.3.e",
+      "task": "Create Fluent UI v9 custom theme",
+      "context": "Create src/styles/theme.ts with custom theme tokens matching REdI/Metro North branding if applicable, or sensible defaults. Create src/styles/global.css with base resets. Wrap App in FluentProvider with custom theme. Ref: Section 6.1, ADR-004.",
+      "success_criteria": "FluentProvider wraps entire app. Custom theme tokens applied. Global CSS loaded.",
+      "dependencies": ["1.3.a"],
+      "parallel_group": "P1C-APP-SCAFFOLD"
+    },
+    {
+      "id": "1.3.f",
+      "task": "Implement AppShell layout component",
+      "context": "Create src/components/layout/AppShell.tsx with Fluent UI navigation pattern: left sidebar with nav items (Dashboard, Interventions, Issues, Reports, Settings), top header bar with app title and user info area, main content area. Ref: Section 6.1, Appendix C Dashboard wireframe.",
+      "success_criteria": "AppShell renders with functional sidebar navigation, header, and content outlet. Responsive: sidebar collapses on narrow screens.",
+      "dependencies": ["1.3.e"],
+      "parallel_group": "P1C-APP-SCAFFOLD"
+    },
+    {
+      "id": "1.3.g",
+      "task": "Implement NavMenu component",
+      "context": "Create src/components/layout/NavMenu.tsx with Fluent UI Nav component. Items: Dashboard (/), Interventions (/interventions), Issues (/issues), Reports (/reports), Settings (/settings). Active state highlighting. Ref: Section 6.1, Appendix C.",
+      "success_criteria": "NavMenu renders all items, highlights current route, navigates on click.",
+      "dependencies": ["1.3.f"],
+      "parallel_group": "P1C-APP-SCAFFOLD"
+    },
+    {
+      "id": "1.3.h",
+      "task": "Implement PageContainer wrapper component",
+      "context": "Create src/components/layout/PageContainer.tsx providing consistent page padding, max-width, breadcrumb slot, and page title. Ref: Section 6.1.",
+      "success_criteria": "PageContainer renders children with consistent layout. Accepts title and breadcrumb props.",
+      "dependencies": ["1.3.f"],
+      "parallel_group": "P1C-APP-SCAFFOLD"
+    },
+    {
+      "id": "1.3.i",
+      "task": "Configure client-side routing",
+      "context": "Set up React Router (or equivalent routing within Code Apps constraints) in App.tsx. Routes: / (Dashboard), /interventions (list), /interventions/:id (detail), /interventions/new (wizard), /issues (list), /reports, /settings. Ref: Section 6.1 routes.ts, Section 6.2 phase-based navigation.",
+      "success_criteria": "All routes resolve to placeholder page components. Navigation between routes works via NavMenu and direct URL.",
+      "dependencies": ["1.3.g"],
+      "parallel_group": "P1C-APP-SCAFFOLD"
+    },
+
+    {
+      "id": "1.4.a",
+      "task": "Define all TypeScript interfaces for domain types",
+      "context": "Create type files in src/types/ per Section 6.1: intervention.types.ts, event.types.ts, session.types.ts, feedback.types.ts, issue.types.ts, person.types.ts, common.types.ts. Each interface maps to Dataverse table columns but uses clean camelCase names (no redi_ prefix). Include Result<T> type for service layer responses per Section 11.1. Ref: Sections 4.2, 12.4.",
+      "success_criteria": "All type files created. Interfaces cover every column from Dataverse schema. No redi_ prefixes in interface properties. Result<T> type defined in common.types.ts.",
+      "dependencies": ["1.3.b"],
+      "parallel_group": "P1D-TYPES-CONSTANTS"
+    },
+    {
+      "id": "1.4.b",
+      "task": "Define TypeScript enums for all Choice columns",
+      "context": "Create src/constants/choiceOptions.ts per Section 6.1. Define enums mapping to every Dataverse Choice column: InterventionType, InterventionStatus, InterventionPhase, Priority, EventType, SessionStatus, AttendanceRole, FeedbackType, ConfidenceChange, IssueCategory, IssueSeverity, IssueStatus, ActionType, ActionStatus, EngagementType, EquipmentCategory, EquipmentSource, BarrierType, BarrierImpact, KirkpatrickLevel, EvaluationMethod, EvidenceOfImpact, ChangeType, ChangeStatus, PersonRole, TagCategory, ReportedVia, LearningNeedsAnalysis, Endorsement, InterventionDesign. Values must match Dataverse OptionSet integer values.",
+      "success_criteria": "All enums defined with display labels and integer values matching Dataverse. Helper function to convert between enum and display label.",
+      "dependencies": ["1.3.b"],
+      "parallel_group": "P1D-TYPES-CONSTANTS"
+    },
+    {
+      "id": "1.4.c",
+      "task": "Define route constants",
+      "context": "Create src/constants/routes.ts with all application routes as typed constants. Ref: Section 6.1.",
+      "success_criteria": "Route constants exported and used by router configuration and NavMenu.",
+      "dependencies": ["1.3.b"],
+      "parallel_group": "P1D-TYPES-CONSTANTS"
+    },
+    {
+      "id": "1.4.d",
+      "task": "Define application configuration constants",
+      "context": "Create src/constants/config.ts with: MAX_FREE_TEXT_LENGTH (500), MAX_RETRIES (3), RETRY_BASE_DELAY_MS (1000), LOG_BUFFER_SIZE (500), STALE_CACHE_MS (30000). Ref: Sections 6.2, 6.3, 11.3, 13.1.",
+      "success_criteria": "All constants exported and documented with JSDoc comments explaining their purpose.",
+      "dependencies": ["1.3.b"],
+      "parallel_group": "P1D-TYPES-CONSTANTS"
+    },
+
+    {
+      "id": "1.5.a",
+      "task": "Implement centralised logger service",
+      "context": "Create src/services/logger.ts per Section 13.1. LogLevel enum (DEBUG/INFO/WARN/ERROR). LogEntry interface. Logger class with: log(level, context, message, data?), debug/info/warn/error convenience methods, circular buffer (500 entries), console output (all levels in dev, WARN+ in prod), error-level entries POST to Power Automate HTTP flow (URL from config). Export singleton instance.",
+      "success_criteria": "Logger outputs to console with formatted timestamps. Circular buffer stores last 500 entries. ERROR-level entries queued for HTTP POST (mock endpoint acceptable for now).",
+      "dependencies": ["1.4.d"],
+      "parallel_group": "P1E-SERVICES-CORE"
+    },
+    {
+      "id": "1.5.b",
+      "task": "Implement base Dataverse data access service",
+      "context": "Create a base service utility wrapping @microsoft/power-apps SDK (or Dataverse Web API as fallback per ADR-001). Implement generic CRUD methods: get(table, id), list(table, options), create(table, data), update(table, id, data), delete(table, id). Include retry logic (3 attempts, exponential backoff on 429/5xx per Section 11.3). Map errors to typed error categories (NETWORK_ERROR, NOT_FOUND, UNKNOWN). Log all operations via logger. Ref: Sections 6.3, 11.1.",
+      "success_criteria": "Base service compiles. Generic CRUD methods accept table name and return Result<T>. Retry logic implemented with exponential backoff. All operations logged at DEBUG (entry) and INFO (success) or ERROR (failure) levels.",
+      "dependencies": ["1.5.a", "1.4.a"],
+      "parallel_group": "P1E-SERVICES-CORE"
+    },
+    {
+      "id": "1.5.c",
+      "task": "Implement useDataverseQuery custom hook",
+      "context": "Create src/hooks/useDataverseQuery.ts per Section 6.3. Generic hook wrapping the base data service with: automatic loading/error state, response caching (stale-while-revalidate pattern using STALE_CACHE_MS config), retry on failure, refetch function. Returns { data, isLoading, error, refetch }.",
+      "success_criteria": "Hook manages loading/error/data states. Cache returns stale data while revalidating. TypeScript generic provides correct typing. Tests cover loading, success, error, and cache hit scenarios.",
+      "dependencies": ["1.5.b"],
+      "parallel_group": "P1E-SERVICES-CORE"
+    },
+    {
+      "id": "1.5.d",
+      "task": "Implement interventionService",
+      "context": "Create src/services/dataverse/interventionService.ts. Methods: getAll() (list with sort by modifiedon desc), getById(id), create(data), update(id, data), updatePhase(id, phase) with transition validation per Section 7.1 state machine, getWithChildren(id) (expand events, count sessions). All methods return Result<T>. Map Dataverse columns (redi_ prefix) to TypeScript interfaces. Ref: Sections 6.1, 7.1, 11.1.",
+      "success_criteria": "All methods implemented with Dataverse column mapping. Phase transition validation enforces state machine rules (Draft→Planning requires name/type/targetunit, Planning→Active requires ≥1 event with ≥1 session). JSDoc on all exported functions.",
+      "dependencies": ["1.5.b", "1.4.a", "1.4.b"],
+      "parallel_group": "P1E-SERVICES-CORE"
+    },
+    {
+      "id": "1.5.e",
+      "task": "Implement eventService",
+      "context": "Create src/services/dataverse/eventService.ts. Methods: getByIntervention(interventionId), getById(id), create(data), update(id, data), delete(id). Map Dataverse columns to TypeScript interfaces. Ref: Section 6.1.",
+      "success_criteria": "All CRUD methods implemented. getByIntervention filters by parent intervention. Column mapping correct.",
+      "dependencies": ["1.5.b", "1.4.a", "1.4.b"],
+      "parallel_group": "P1E-SERVICES-CORE"
+    },
+    {
+      "id": "1.5.f",
+      "task": "Implement sessionService",
+      "context": "Create src/services/dataverse/sessionService.ts. Methods: getByEvent(eventId), getById(id), create(data), update(id, data), delete(id), updateStatus(id, status). Include session status transition logic. Ref: Sections 6.1, 7.2.",
+      "success_criteria": "All CRUD methods implemented. getByEvent filters by parent event. Status transitions validated.",
+      "dependencies": ["1.5.b", "1.4.a", "1.4.b"],
+      "parallel_group": "P1E-SERVICES-CORE"
+    },
+    {
+      "id": "1.5.g",
+      "task": "Implement personService",
+      "context": "Create src/services/dataverse/personService.ts. Methods: search(query) for person picker typeahead, getById(id), create(data), update(id, data), getAll(). Search should match on displayname and email. Ref: Section 6.1.",
+      "success_criteria": "Search method queries Dataverse with filter on displayname contains or email contains. Results sorted by displayname.",
+      "dependencies": ["1.5.b", "1.4.a"],
+      "parallel_group": "P1E-SERVICES-CORE"
+    },
+    {
+      "id": "1.5.h",
+      "task": "Implement tagService",
+      "context": "Create src/services/dataverse/tagService.ts. Methods: getAll(), getByCategory(category), search(query), create(data). For tag picker with create-on-the-fly capability. Ref: Section 6.1.",
+      "success_criteria": "All methods implemented. Search filters on tag name. Create returns the new tag for immediate UI use.",
+      "dependencies": ["1.5.b", "1.4.a"],
+      "parallel_group": "P1E-SERVICES-CORE"
+    },
+    {
+      "id": "1.5.i",
+      "task": "Write unit tests for service layer mapper functions",
+      "context": "Write Vitest tests for the Dataverse-to-TypeScript mapping functions in each service. Test: correct property mapping, null/undefined handling, choice value conversion, date parsing. Ref: Section 14.1 (service layer unit tests are priority 1).",
+      "success_criteria": "Tests cover all mapper functions across intervention, event, session, person, tag services. All tests pass. Coverage > 90% on mapper code.",
+      "dependencies": ["1.5.d", "1.5.e", "1.5.f", "1.5.g", "1.5.h"],
+      "parallel_group": "P1E-SERVICES-CORE"
+    },
+
+    {
+      "id": "1.6.a",
+      "task": "Implement utility functions: dateUtils",
+      "context": "Create src/utils/dateUtils.ts with: formatDate, formatDateTime, formatRelativeTime, isDateBefore, isDateAfter, daysBetween, addDays. All using Intl.DateTimeFormat for locale-aware formatting (en-AU). Ref: Section 6.1.",
+      "success_criteria": "All functions exported with JSDoc. Unit tests cover formatting, comparison, and edge cases (null input, timezone).",
+      "dependencies": ["1.3.b"],
+      "parallel_group": "P1F-UTILS"
+    },
+    {
+      "id": "1.6.b",
+      "task": "Implement utility functions: validationUtils",
+      "context": "Create src/utils/validationUtils.ts with: isRequired, maxLength, isValidEmail, isDateRangeValid, isInRange (for numeric). Return validation result with error message. Ref: Sections 6.1, 14.3.",
+      "success_criteria": "All validators exported with JSDoc. Unit tests cover valid and invalid inputs.",
+      "dependencies": ["1.3.b"],
+      "parallel_group": "P1F-UTILS"
+    },
+    {
+      "id": "1.6.c",
+      "task": "Implement utility functions: formatUtils",
+      "context": "Create src/utils/formatUtils.ts with: formatLikertLabel, formatChoiceLabel (generic enum to display string), pluralise, truncateText. Ref: Section 6.1.",
+      "success_criteria": "All functions exported with JSDoc. Unit tests verify correct output.",
+      "dependencies": ["1.4.b"],
+      "parallel_group": "P1F-UTILS"
+    },
+
+    {
+      "id": "1.7.a",
+      "task": "Implement shared ErrorBoundary components",
+      "context": "Create src/components/shared/ErrorBoundary.tsx implementing the three-tier hierarchy per Section 11.1: AppErrorBoundary (fatal, shows recovery UI), PageErrorBoundary (per-page, allows navigation away), SectionErrorBoundary (per-section, siblings remain usable). Each level shows appropriate error UI with retry button.",
+      "success_criteria": "Three error boundary components exported. Each catches errors in children and renders fallback UI. AppErrorBoundary offers page reload. PageErrorBoundary offers navigation. SectionErrorBoundary offers retry.",
+      "dependencies": ["1.3.f"],
+      "parallel_group": "P1G-SHARED-COMPONENTS"
+    },
+    {
+      "id": "1.7.b",
+      "task": "Implement shared LoadingSpinner component",
+      "context": "Create src/components/shared/LoadingSpinner.tsx using Fluent UI Spinner. Accept size and label props. Ref: Section 6.1.",
+      "success_criteria": "Component renders Fluent UI Spinner with customisable size and accessible label.",
+      "dependencies": ["1.3.e"],
+      "parallel_group": "P1G-SHARED-COMPONENTS"
+    },
+    {
+      "id": "1.7.c",
+      "task": "Implement shared EmptyState component",
+      "context": "Create src/components/shared/EmptyState.tsx displaying icon, message, and optional action button for empty data lists. Ref: Section 6.1.",
+      "success_criteria": "Component renders with icon, configurable message, and optional CTA button.",
+      "dependencies": ["1.3.e"],
+      "parallel_group": "P1G-SHARED-COMPONENTS"
+    },
+    {
+      "id": "1.7.d",
+      "task": "Implement shared StatusBadge component",
+      "context": "Create src/components/shared/StatusBadge.tsx rendering a Fluent UI Badge with colour-coded status. Accept generic status enum value and colour mapping. Used for Intervention status, Session status, Issue status, Action status. Ref: Section 6.1.",
+      "success_criteria": "Component renders correct colour and label for all status values across different entity types.",
+      "dependencies": ["1.3.e", "1.4.b"],
+      "parallel_group": "P1G-SHARED-COMPONENTS"
+    },
+    {
+      "id": "1.7.e",
+      "task": "Implement shared ConfirmDialog component",
+      "context": "Create src/components/shared/ConfirmDialog.tsx using Fluent UI Dialog. Accept title, message, confirmLabel, cancelLabel, onConfirm, onCancel. Used for delete confirmations and destructive actions. Ref: Section 6.1.",
+      "success_criteria": "Dialog renders with customisable content. Calls appropriate callbacks on confirm/cancel. Accessible (keyboard navigation, focus trap).",
+      "dependencies": ["1.3.e"],
+      "parallel_group": "P1G-SHARED-COMPONENTS"
+    },
+    {
+      "id": "1.7.f",
+      "task": "Implement shared LikertScale component",
+      "context": "Create src/components/shared/LikertScale.tsx per Section 6.2. Renders 1-5 rating as radio group with visual scale (stars or numbered). Controlled component accepting value and onChange. Accessible with ARIA labels. Used for all Likert-type rating inputs.",
+      "success_criteria": "Component renders 5 selectable options with visual indication of selection. Controlled value prop works correctly. Screen reader accessible.",
+      "dependencies": ["1.3.e"],
+      "parallel_group": "P1G-SHARED-COMPONENTS"
+    },
+    {
+      "id": "1.7.g",
+      "task": "Implement shared PersonPicker component",
+      "context": "Create src/components/shared/PersonPicker.tsx per Section 6.1. ComboBox with typeahead search against personService.search(). Shows displayname and role in dropdown. Includes 'Create new person' option that opens inline form (name, email, role, department). On create, calls personService.create() and selects the new person. Ref: Section 6.2 minimal free-text principle.",
+      "success_criteria": "PersonPicker searches existing people with debounced typeahead. Dropdown shows name + role. Create-new option adds person inline without navigating away. Selected person returned via onChange.",
+      "dependencies": ["1.3.e", "1.5.g"],
+      "parallel_group": "P1G-SHARED-COMPONENTS"
+    },
+
+    {
+      "id": "1.8.a",
+      "task": "Implement InterventionContext provider",
+      "context": "Create React Context + useReducer for intervention-level state per Section 6.3. State: currentIntervention, events, sessions, isLoading, error. Actions: SET_INTERVENTION, SET_EVENTS, SET_SESSIONS, UPDATE_INTERVENTION, ADD_EVENT, etc. Provider wraps intervention detail pages.",
+      "success_criteria": "InterventionContext provides current intervention data to all child components. Reducer handles all defined actions. TypeScript-typed state and dispatch.",
+      "dependencies": ["1.4.a"],
+      "parallel_group": "P1H-STATE-MGMT"
+    },
+    {
+      "id": "1.8.b",
+      "task": "Implement AppContext provider",
+      "context": "Create AppContext per Section 6.3 for global state: current user info (from Entra), navigation state, global settings/preferences. Wrap the entire App.",
+      "success_criteria": "AppContext provides user info and global settings to all components. User info populated from Power Apps SDK auth context.",
+      "dependencies": ["1.4.a", "1.3.a"],
+      "parallel_group": "P1H-STATE-MGMT"
+    },
+
+    {
+      "id": "1.9.a",
+      "task": "Implement InterventionListPage",
+      "context": "Create src/components/intervention/InterventionListPage.tsx. Displays all interventions in a sortable, filterable list/table. Columns: name, type, status, phase, target unit, sessions count, open issues. Filter by status and phase. Sort by modified date desc by default. 'New Intervention' button navigates to wizard. Click row navigates to detail. Uses interventionService.getAll(). Ref: Section 6.1, Appendix C.",
+      "success_criteria": "Page loads interventions from Dataverse. Displays in table with all specified columns. Filter and sort functional. Loading and empty states shown appropriately.",
+      "dependencies": ["1.5.d", "1.7.b", "1.7.c", "1.7.d", "1.3.i"],
+      "parallel_group": "P1I-INTERVENTION-UI"
+    },
+    {
+      "id": "1.9.b",
+      "task": "Implement InterventionWizard (Steps 1-3: Basics, Learning Needs, Design)",
+      "context": "Create src/components/intervention/InterventionWizard.tsx with stepped form per Section 6.2. Phase 1 implements first 3 steps: Step 1 (Basics): name, type dropdown, target unit, priority dropdown, description textarea. Step 2 (Learning Needs): analysis type dropdown, endorsement dropdown, target audience multi-select. Step 3 (Design): intervention design multi-select checkboxes, planned start/end dates. Each step validates before advancing. Auto-save to Dataverse on step completion as Draft. Progress indicator.",
+      "success_criteria": "3-step wizard renders with correct form controls. Validation prevents advancing with missing required fields. Auto-save creates/updates Draft intervention in Dataverse. Progress indicator shows current step.",
+      "dependencies": ["1.5.d", "1.4.b", "1.6.b", "1.3.i"],
+      "parallel_group": "P1I-INTERVENTION-UI"
+    },
+    {
+      "id": "1.9.c",
+      "task": "Implement InterventionDetailPage with tab navigation",
+      "context": "Create src/components/intervention/InterventionDetailPage.tsx per Section 6.2. Loads intervention by ID from route params using interventionService.getById(). Renders horizontal tab bar: Planning, Events & Sessions, Issues & Actions, Followup, Report. Phase 1 implements Planning and Events & Sessions tabs only. Back button navigates to list. Status badge in header. Wrapped in InterventionContext provider.",
+      "success_criteria": "Page loads intervention data. Tab bar renders all 5 tabs (inactive tabs show placeholder). Planning and Events & Sessions tabs render their content. Header shows intervention name and status badge.",
+      "dependencies": ["1.5.d", "1.8.a", "1.7.d", "1.3.i"],
+      "parallel_group": "P1I-INTERVENTION-UI"
+    },
+    {
+      "id": "1.9.d",
+      "task": "Implement PlanningPhaseForm",
+      "context": "Create src/components/intervention/PlanningPhaseForm.tsx for the Planning tab of InterventionDetailPage. Editable form showing all planning fields: basics (name, type, etc.), learning needs, design, dates, hours. Save button updates intervention via service. Read from InterventionContext.",
+      "success_criteria": "Form displays all planning fields pre-populated from context. Save persists changes to Dataverse. Validation on save.",
+      "dependencies": ["1.9.c", "1.8.a"],
+      "parallel_group": "P1I-INTERVENTION-UI"
+    },
+
+    {
+      "id": "1.10.a",
+      "task": "Implement EventCard component",
+      "context": "Create src/components/event/EventCard.tsx displaying event summary: name, type, status, session count, estimated duration. Click expands to show sessions list. 'Add Session' button. Ref: Appendix C Intervention Detail wireframe.",
+      "success_criteria": "Card renders event info. Expandable to show child sessions. Add Session button triggers SessionForm.",
+      "dependencies": ["1.4.a", "1.7.d"],
+      "parallel_group": "P1J-EVENT-SESSION-UI"
+    },
+    {
+      "id": "1.10.b",
+      "task": "Implement EventForm component",
+      "context": "Create src/components/event/EventForm.tsx for creating/editing events within an intervention. Fields: name, description (textarea), event type (dropdown), target audience (multi-select), estimated duration (SpinButton). Creates via eventService. Ref: Sections 4.2, 6.1.",
+      "success_criteria": "Form renders all fields. Create mode saves new event linked to current intervention. Edit mode pre-populates and updates. Validation enforces required name.",
+      "dependencies": ["1.5.e", "1.4.b", "1.8.a"],
+      "parallel_group": "P1J-EVENT-SESSION-UI"
+    },
+    {
+      "id": "1.10.c",
+      "task": "Implement EventListPanel component",
+      "context": "Create src/components/event/EventListPanel.tsx for the Events & Sessions tab. Lists all events for the current intervention using EventCard components. 'Add Event' button opens EventForm. Data from InterventionContext.",
+      "success_criteria": "Panel lists all events with EventCards. Add Event opens form dialog/panel. Empty state shown when no events.",
+      "dependencies": ["1.10.a", "1.10.b"],
+      "parallel_group": "P1J-EVENT-SESSION-UI"
+    },
+    {
+      "id": "1.10.d",
+      "task": "Implement SessionForm component",
+      "context": "Create src/components/session/SessionForm.tsx for creating/editing sessions within an event. Fields: date/time picker, location (text), status (dropdown), actual duration (SpinButton), participant count (SpinButton), engagement rating (LikertScale), facilitator notes (textarea). Creates via sessionService. Ref: Sections 4.2, 6.1.",
+      "success_criteria": "Form renders all fields. Create mode saves new session linked to parent event. Edit mode pre-populates. DateTime picker works correctly for AEST.",
+      "dependencies": ["1.5.f", "1.7.f", "1.4.b"],
+      "parallel_group": "P1J-EVENT-SESSION-UI"
+    },
+    {
+      "id": "1.10.e",
+      "task": "Implement SessionCard component",
+      "context": "Create src/components/session/SessionCard.tsx displaying: session date, location, status badge, participant count, average rating (if feedback exists), QR code button (placeholder for Phase 2). Ref: Appendix C.",
+      "success_criteria": "Card renders session summary with all specified data. Status badge colour-coded. QR button rendered but disabled (Phase 2).",
+      "dependencies": ["1.4.a", "1.7.d"],
+      "parallel_group": "P1J-EVENT-SESSION-UI"
+    },
+    {
+      "id": "1.10.f",
+      "task": "Implement SessionListPanel component",
+      "context": "Create src/components/session/SessionListPanel.tsx rendering within an EventCard expansion. Lists sessions for a given event. 'Add Session' button opens SessionForm. Uses SessionCard components.",
+      "success_criteria": "Panel lists sessions within an event. Add button opens SessionForm. Empty state when no sessions.",
+      "dependencies": ["1.10.d", "1.10.e"],
+      "parallel_group": "P1J-EVENT-SESSION-UI"
+    },
+    {
+      "id": "1.10.g",
+      "task": "Implement AttendanceManager component",
+      "context": "Create src/components/session/AttendanceManager.tsx for managing session attendance. Uses PersonPicker to add attendees. Table showing name, role dropdown (Participant/Facilitator/Observer/Confederate), attended checkbox. Bulk add capability. Creates SessionAttendance records via a dedicated attendance service method. Ref: Section 4.2 SessionAttendance.",
+      "success_criteria": "Attendance list displays with person name and role. PersonPicker adds new attendees. Role editable via dropdown. Attended toggle works. Changes persist to Dataverse.",
+      "dependencies": ["1.7.g", "1.5.f", "1.4.b"],
+      "parallel_group": "P1J-EVENT-SESSION-UI"
+    },
+
+    {
+      "id": "CR.1",
+      "task": "Phase 1 checkpoint code review",
+      "context": "Review all Phase 1 deliverables: Dataverse schema correctness (all tables/columns/relationships/choices match spec), Code App architecture (folder structure, naming conventions per Section 5.2, coding standards per Section 12), service layer patterns (Result<T>, error handling, logging), shared components (accessibility, Fluent UI compliance). Verify ESLint passes with no errors. Verify all unit tests pass. Review Git commit history for clean, atomic commits.",
+      "success_criteria": "All code follows naming conventions (Section 5.2). ESLint clean. All tests pass. Service layer follows Result<T> pattern consistently. Error boundaries in place. No redi_ prefixes leak into UI components. Dataverse solution export committed to Git.",
+      "dependencies": ["1.2.g", "1.5.i", "1.9.d", "1.10.g"],
+      "parallel_group": "CR1-REVIEW"
+    },
+    {
+      "id": "CR.1.b",
+      "task": "Phase 1 milestone validation",
+      "context": "End-to-end manual test per Phase 1 milestone (Section 17): create an intervention via wizard, add an event, add a session, view intervention list, navigate to detail, edit planning data. Document any bugs or issues found.",
+      "success_criteria": "Complete happy-path flow works: create intervention → add event → add session → view in list → open detail → edit planning fields → save. No blocking errors.",
+      "dependencies": ["CR.1"],
+      "parallel_group": "CR1-REVIEW"
+    },
+
+    {
+      "id": "2.1.a",
+      "task": "Implement HMAC token generation utility",
+      "context": "Create src/utils/hmacUtils.ts (or server-side equivalent in Power Automate). Function: generateHmacToken(sessionId, secret) → HMAC-SHA256 hex string. For Code App use: use Web Crypto API (SubtleCrypto.sign). For Power Automate: use expression. Secret sourced from environment variable. Ref: Section 8.2, 8.5.",
+      "success_criteria": "Function generates consistent HMAC-SHA256 tokens. Unit test verifies deterministic output for known input. Token format is hex-encoded string.",
+      "dependencies": ["CR.1.b"],
+      "parallel_group": "P2A-SURVEY-FOUNDATION"
+    },
+    {
+      "id": "2.1.b",
+      "task": "Implement QR code generation utility",
+      "context": "Create src/utils/qrCodeUtils.ts using 'qrcode' npm package per Section 8.3. Functions: generateQRDataUrl(url) → base64 PNG data URL, generateQRCanvas(url, canvasElement) → renders to canvas. QR size suitable for mobile scanning (min 200x200px).",
+      "success_criteria": "QR data URL generated from arbitrary URL input. Unit test verifies non-empty data URL output. QR code is scannable when rendered.",
+      "dependencies": ["CR.1.b"],
+      "parallel_group": "P2A-SURVEY-FOUNDATION"
+    },
+    {
+      "id": "2.1.c",
+      "task": "Write unit tests for HMAC utility",
+      "context": "Vitest tests: deterministic output for same input, different output for different session IDs, different output for different secrets, hex string format validation. Ref: Section 14.1 (utility tests are priority 2).",
+      "success_criteria": "All test cases pass. 100% coverage on hmacUtils.",
+      "dependencies": ["2.1.a"],
+      "parallel_group": "P2A-SURVEY-FOUNDATION"
+    },
+
+    {
+      "id": "2.2.a",
+      "task": "Build Power Automate flow: Survey Serve (HTTP GET)",
+      "context": "Create flow per Appendix B Flow 2: HTTP GET trigger. Query params: sid, t. Actions: validate HMAC token (recompute from sid + environment variable secret and compare to t), get Session row (check surveyactive=true), get parent Event name, compose mobile-responsive HTML form (inline CSS, Fluent-inspired, 5 questions per Section 8.4: overall rating 5-star, relevance 5-point, confidence change 5-point, recommend yes/no, open comment textarea 500 char). Hidden fields: sessionId, token, processing flow URL. Return 200 with HTML. Error responses: 400 bad token, 404 inactive/not found, 500 unexpected. Scope-based try/catch per Section 11.2. Log to FlowLog. Flow name: 'CEIR - HTTP GET - Serve Survey Form'.",
+      "success_criteria": "Flow responds to GET requests. Valid token returns mobile-responsive HTML form. Invalid token returns 400 HTML error page. Inactive survey returns 404. All paths logged to FlowLog.",
+      "dependencies": ["0.4", "1.1.d", "1.1.r"],
+      "parallel_group": "P2B-SURVEY-FLOWS"
+    },
+    {
+      "id": "2.2.b",
+      "task": "Build Power Automate flow: Survey Process (HTTP POST)",
+      "context": "Create flow per Appendix B Flow 3: HTTP POST trigger. Parse form-encoded body (rating, relevance, confidence, recommend, comment, sid, token). Validate HMAC. Validate input (required fields, ratings 1-5). Create Feedback row in Dataverse (isanonymous=true, source='QR Survey', map all form fields). Return 200 with thank-you HTML. Error: 400 on validation failure, 403 on bad token. Scope-based try/catch. Log to FlowLog. Flow name: 'CEIR - HTTP POST - Process Survey Response'.",
+      "success_criteria": "Flow processes POST form data. Valid submission creates Feedback row in Dataverse with correct field mapping. Invalid data returns 400 with descriptive HTML. Bad token returns 403. Thank-you page returned on success. All paths logged.",
+      "dependencies": ["0.4", "1.1.g", "1.1.r"],
+      "parallel_group": "P2B-SURVEY-FLOWS"
+    },
+    {
+      "id": "2.2.c",
+      "task": "Build Power Automate flow: Session Created - Generate Survey URL",
+      "context": "Create flow per Appendix B Flow 1: Dataverse trigger on Session row added (or status changed to Scheduled/In Progress/Completed). Generate HMAC token from sessionId + secret. Compose survey URL using SurveyServeFlowUrl env var + query params. Generate QR code data (via external QR API or inline). Update Session row: surveyurl, surveyqrdata, surveyactive=true. Flow name: 'CEIR - Session Created - Generate Survey URL'. Scope-based try/catch. Log to FlowLog.",
+      "success_criteria": "Flow triggers on new Session creation. Survey URL populated on Session record. QR data populated. surveyactive set to true. Flow logged in FlowLog.",
+      "dependencies": ["2.2.a", "1.1.d", "0.4", "1.1.r"],
+      "parallel_group": "P2B-SURVEY-FLOWS"
+    },
+    {
+      "id": "2.2.d",
+      "task": "Update environment variable with Survey Serve flow URL",
+      "context": "After creating the Survey Serve flow (2.2.a), copy its HTTP trigger URL and set it as the value of redi_SurveyServeFlowUrl environment variable. Also update the Session Created flow to reference this URL.",
+      "success_criteria": "Environment variable contains the correct HTTP trigger URL. Session Created flow uses this URL to compose survey links.",
+      "dependencies": ["2.2.a", "2.2.c"],
+      "parallel_group": "P2B-SURVEY-FLOWS"
+    },
+    {
+      "id": "2.2.e",
+      "task": "Test survey flow end-to-end with Postman/curl",
+      "context": "Create a Postman collection (or curl script) testing: GET survey with valid token → HTML form returned, GET with bad token → 400, GET with inactive survey → 404, POST valid submission → Feedback row created + thank-you, POST missing fields → 400, POST bad token → 403. Ref: Section 14.2. Save collection in repo under /tests/.",
+      "success_criteria": "All test scenarios pass. Postman collection committed to Git. Feedback rows verified in Dataverse.",
+      "dependencies": ["2.2.d"],
+      "parallel_group": "P2B-SURVEY-FLOWS"
+    },
+
+    {
+      "id": "2.3.a",
+      "task": "Implement QRCodeDisplay component",
+      "context": "Create src/components/session/QRCodeDisplay.tsx per Appendix C QR Code Display wireframe. Shows: session name and date header, QR code image (from qrCodeUtils or Session record data), 'Scan to provide feedback' text, Full Screen button (renders QR in fullscreen overlay), Download PNG button, survey status indicator (Active/Inactive), Deactivate/Activate toggle, response count. Props: session object. Ref: Section 8.3, Appendix C.",
+      "success_criteria": "QR code renders from session survey URL. Full screen mode works. PNG download produces valid image file. Active/inactive toggle updates session via sessionService. Response count displayed.",
+      "dependencies": ["2.1.b", "1.5.f", "1.10.e"],
+      "parallel_group": "P2C-SURVEY-UI"
+    },
+    {
+      "id": "2.3.b",
+      "task": "Integrate QR display into SessionCard",
+      "context": "Update SessionCard to show a QR icon button that opens QRCodeDisplay in a dialog/panel when survey URL exists on the session. Show response count badge on the QR button.",
+      "success_criteria": "SessionCard shows clickable QR button when surveyurl is populated. Opens QRCodeDisplay panel. Response count shown as badge.",
+      "dependencies": ["2.3.a", "1.10.e"],
+      "parallel_group": "P2C-SURVEY-UI"
+    },
+    {
+      "id": "2.3.c",
+      "task": "Implement FeedbackSummary component",
+      "context": "Create src/components/feedback/FeedbackSummary.tsx per Section 6.1. Displays aggregate feedback for a session: average overall rating (star display), average relevance rating, confidence change distribution, recommendation rate (%), response count, response rate (vs participant count). Uses feedbackService to query Feedback rows for a session.",
+      "success_criteria": "Component queries and displays all aggregate metrics. Handles zero-feedback gracefully (empty state). Numbers formatted correctly.",
+      "dependencies": ["1.4.a", "1.3.e"],
+      "parallel_group": "P2C-SURVEY-UI"
+    },
+    {
+      "id": "2.3.d",
+      "task": "Implement feedbackService",
+      "context": "Create src/services/dataverse/feedbackService.ts. Methods: getBySession(sessionId), getByIntervention(interventionId) (across all sessions), create(data) for in-app feedback, computeAggregates(sessionId) returning averages and counts. Ref: Section 6.1.",
+      "success_criteria": "All methods implemented. getBySession filters correctly. computeAggregates returns average ratings, count, recommendation rate, confidence change distribution.",
+      "dependencies": ["1.5.b", "1.4.a"],
+      "parallel_group": "P2C-SURVEY-UI"
+    },
+    {
+      "id": "2.3.e",
+      "task": "Implement FeedbackDetailList component",
+      "context": "Create src/components/feedback/FeedbackDetailList.tsx showing individual feedback responses for a session in a table/list: submitted date, overall rating, relevance, confidence change, recommend, comment (truncated with expand). Anonymous entries shown without person info. Ref: Section 6.1.",
+      "success_criteria": "List shows all feedback for a session. Columns render correctly. Anonymous entries display as 'Anonymous'. Comments truncated at ~100 chars with 'show more' toggle.",
+      "dependencies": ["2.3.d", "1.4.a"],
+      "parallel_group": "P2C-SURVEY-UI"
+    },
+
+    {
+      "id": "2.4.a",
+      "task": "Export updated Dataverse solution to Git",
+      "context": "After all Phase 2 flow work, re-export the Dataverse solution including the new flows and commit to Git. Update docs/flows/ with Flow 1, 2, 3 specifications.",
+      "success_criteria": "Updated solution ZIP committed. docs/flows/ contains specifications for all 3 survey-related flows.",
+      "dependencies": ["2.2.e"],
+      "parallel_group": "P2D-SCM"
+    },
+
+    {
+      "id": "CR.2",
+      "task": "Phase 2 checkpoint code review",
+      "context": "Review: Power Automate flows follow scope-based try/catch (Section 11.2), naming conventions (Section 5.3), all paths logged. Survey HTML is mobile-responsive, accessible, matches Fluent UI styling. QRCodeDisplay is functional. FeedbackSummary computes correctly. HMAC implementation is secure. Unit tests pass.",
+      "success_criteria": "Flows follow all conventions. Survey form renders correctly on mobile. Feedback data flows from survey to UI correctly. HMAC tests pass. No security concerns with token implementation.",
+      "dependencies": ["2.4.a", "2.3.e", "2.1.c"],
+      "parallel_group": "CR2-REVIEW"
+    },
+    {
+      "id": "CR.2.b",
+      "task": "Phase 2 milestone validation",
+      "context": "End-to-end test per Phase 2 milestone (Section 17): create session → survey URL auto-generated → scan QR (or open URL manually) → fill survey → submit → see feedback in FeedbackSummary. Test deactivation: deactivate survey → attempt submission → rejected.",
+      "success_criteria": "Full survey lifecycle works. Feedback appears in app within 60 seconds of submission. Deactivated survey returns appropriate error page.",
+      "dependencies": ["CR.2"],
+      "parallel_group": "CR2-REVIEW"
+    },
+
+    {
+      "id": "3.1.a",
+      "task": "Implement issueService",
+      "context": "Create src/services/dataverse/issueService.ts. Methods: getBySession(sessionId), getByIntervention(interventionId) (across all sessions), getById(id), create(data), update(id, data), updateStatus(id, status). Ref: Section 6.1.",
+      "success_criteria": "All CRUD methods implemented with Result<T> pattern. getByIntervention aggregates across intervention's sessions.",
+      "dependencies": ["1.5.b", "1.4.a", "CR.2.b"],
+      "parallel_group": "P3A-ISSUES-SERVICES"
+    },
+    {
+      "id": "3.1.b",
+      "task": "Implement correctiveActionService",
+      "context": "Create a service (extend issueService or separate file) for CorrectiveAction CRUD: getByIssue(issueId), getByIntervention(interventionId), getOpenActions(), create(data), update(id, data), updateStatus(id, status). getOpenActions used by dashboard for pending actions display.",
+      "success_criteria": "All methods implemented. getOpenActions returns Pending/In Progress/Overdue actions. Status updates validate allowed transitions.",
+      "dependencies": ["1.5.b", "1.4.a", "CR.2.b"],
+      "parallel_group": "P3A-ISSUES-SERVICES"
+    },
+
+    {
+      "id": "3.2.a",
+      "task": "Implement IssueForm component",
+      "context": "Create src/components/issues/IssueForm.tsx. Fields: title (text), description (textarea), category (9-value dropdown per Section 4.2), severity (dropdown using global SeverityLevel), status (dropdown), identified by (PersonPicker), identified on (date), reported to (text), reported via (dropdown), Riskman reference (text, optional). Create and edit modes.",
+      "success_criteria": "Form renders all fields with correct control types. Create saves linked to parent session. Edit pre-populates. Validation on title (required).",
+      "dependencies": ["3.1.a", "1.7.g", "1.4.b"],
+      "parallel_group": "P3B-ISSUES-UI"
+    },
+    {
+      "id": "3.2.b",
+      "task": "Implement IssueCard component",
+      "context": "Create src/components/issues/IssueCard.tsx showing: title, category badge, severity badge (colour-coded), status badge, identified date, corrective action count. Click opens issue detail/edit.",
+      "success_criteria": "Card renders all fields. Severity colour-coding: Low=green, Medium=yellow, High=orange, Critical=red. Action count shown.",
+      "dependencies": ["1.7.d", "1.4.a"],
+      "parallel_group": "P3B-ISSUES-UI"
+    },
+    {
+      "id": "3.2.c",
+      "task": "Implement IssueListPanel component",
+      "context": "Create src/components/issues/IssueListPanel.tsx for the Issues & Actions tab in InterventionDetailPage. Lists all issues across all sessions for the intervention using IssueCard. 'Add Issue' button opens IssueForm (with session picker if multiple sessions). Filter by status, severity.",
+      "success_criteria": "Panel lists all issues for the intervention. Add button works. Filters functional. Session context shown for each issue.",
+      "dependencies": ["3.2.a", "3.2.b"],
+      "parallel_group": "P3B-ISSUES-UI"
+    },
+    {
+      "id": "3.2.d",
+      "task": "Implement CorrectiveActionForm component",
+      "context": "Create src/components/issues/CorrectiveActionForm.tsx. Fields: title (text), action type (8-value dropdown per Section 4.2), assigned to (text), status (dropdown), due date, completed date (shown when status=Completed/Verified), evidence (textarea), verified by (text, shown when status=Verified). Create and edit modes.",
+      "success_criteria": "Form renders all fields. Conditional fields shown/hidden based on status. Create saves linked to parent issue. Edit pre-populates.",
+      "dependencies": ["3.1.b", "1.4.b"],
+      "parallel_group": "P3B-ISSUES-UI"
+    },
+    {
+      "id": "3.2.e",
+      "task": "Implement CorrectiveActionTracker component",
+      "context": "Create src/components/issues/CorrectiveActionTracker.tsx displayed within an issue detail view. Lists all corrective actions for an issue with: title, type, assigned to, status badge, due date (with overdue highlighting), completed date. 'Add Action' button. Inline status updates.",
+      "success_criteria": "Tracker lists all actions for an issue. Overdue items highlighted (red/orange). Status can be updated inline. Add button opens CorrectiveActionForm.",
+      "dependencies": ["3.2.d", "1.7.d"],
+      "parallel_group": "P3B-ISSUES-UI"
+    },
+    {
+      "id": "3.2.f",
+      "task": "Wire Issues tab into InterventionDetailPage",
+      "context": "Connect the IssueListPanel and CorrectiveActionTracker into the 'Issues & Actions' tab of InterventionDetailPage. Ensure data flows correctly from InterventionContext.",
+      "success_criteria": "Issues & Actions tab shows all issues with their corrective actions. Navigation between issue list and issue detail works within the tab.",
+      "dependencies": ["3.2.c", "3.2.e", "1.9.c"],
+      "parallel_group": "P3B-ISSUES-UI"
+    },
+
+    {
+      "id": "3.3.a",
+      "task": "Build Power Automate flow: Corrective Action Reminders",
+      "context": "Create flow per Appendix B Flow 4: Recurrence trigger daily at 08:00 AEST. Query CorrectiveActions where status IN (Pending, In Progress) AND duedate <= today + 3 days. For each: get parent Issue and Intervention. If overdue: update status to 'Overdue'. Compose reminder email grouped by Intervention. Send to Intervention owner. Log to FlowLog. Scope-based try/catch. Flow name: 'CEIR - Scheduled - Corrective Action Reminders'.",
+      "success_criteria": "Flow runs daily. Identifies due-soon and overdue actions. Updates overdue status. Sends grouped email to intervention owner. All logged to FlowLog.",
+      "dependencies": ["1.1.i", "1.1.r", "0.4"],
+      "parallel_group": "P3C-ISSUES-FLOWS"
+    },
+
+    {
+      "id": "3.4.a",
+      "task": "Export updated Dataverse solution to Git (Phase 3)",
+      "context": "Re-export solution with new reminder flow. Commit to Git. Update docs/flows/ with Flow 4 specification.",
+      "success_criteria": "Solution ZIP committed. Flow 4 documented.",
+      "dependencies": ["3.3.a"],
+      "parallel_group": "P3D-SCM"
+    },
+
+    {
+      "id": "CR.3",
+      "task": "Phase 3 checkpoint code review",
+      "context": "Review: Issue and CorrectiveAction forms use structured input (minimal free text per Section 6.2). StatusBadge colours consistent. Reminder flow follows conventions. Service layer tests updated for new services.",
+      "success_criteria": "All code follows standards. New services have mapper tests. Reminder flow tested. Issue/action lifecycle works end-to-end.",
+      "dependencies": ["3.4.a", "3.2.f"],
+      "parallel_group": "CR3-REVIEW"
+    },
+    {
+      "id": "CR.3.b",
+      "task": "Phase 3 milestone validation",
+      "context": "End-to-end test per Phase 3 milestone (Section 17): record issue from session → create corrective action → set due date 2 days out → verify reminder email received → mark action completed → verify status update.",
+      "success_criteria": "Full issue lifecycle works. Reminder email sent for upcoming due dates. Overdue actions auto-updated. All statuses trackable in UI.",
+      "dependencies": ["CR.3"],
+      "parallel_group": "CR3-REVIEW"
+    },
+
+    {
+      "id": "4.1.a",
+      "task": "Implement EvaluationForm component",
+      "context": "Create src/components/evaluation/EvaluationForm.tsx. Fields per Section 4.2 Evaluation table: Kirkpatrick level (dropdown: L1-L4), method (dropdown: 9 values), findings (textarea), evidence of impact (dropdown: 4 values), evaluation date, evaluator (text). Create and edit. Multiple evaluations per intervention.",
+      "success_criteria": "Form renders all fields. Create saves linked to intervention. List view shows existing evaluations with add/edit capability.",
+      "dependencies": ["1.5.b", "1.4.b", "CR.3.b"],
+      "parallel_group": "P4A-FOLLOWUP-UI"
+    },
+    {
+      "id": "4.1.b",
+      "task": "Implement ChangeImplementedForm component",
+      "context": "Create src/components/evaluation/ChangeImplementedForm.tsx. Fields per Section 4.2 ChangeImplemented: change type (8-value dropdown), description (textarea), implemented date, status (5-value dropdown), monitoring method (textarea). Create and edit. Multiple changes per intervention.",
+      "success_criteria": "Form renders all fields. Create saves linked to intervention. List view shows existing changes.",
+      "dependencies": ["1.5.b", "1.4.b", "CR.3.b"],
+      "parallel_group": "P4A-FOLLOWUP-UI"
+    },
+    {
+      "id": "4.1.c",
+      "task": "Implement ValueAssessmentForm component",
+      "context": "Create src/components/evaluation/ValueAssessmentForm.tsx. Fields: overall value rating (LikertScale 1-5), value notes (textarea), followup hours (decimal), recommendations for future (textarea). Updates the Intervention record's followup fields.",
+      "success_criteria": "Form updates intervention-level followup fields. LikertScale component used for rating. Save persists to Dataverse.",
+      "dependencies": ["1.7.f", "1.5.d", "CR.3.b"],
+      "parallel_group": "P4A-FOLLOWUP-UI"
+    },
+    {
+      "id": "4.1.d",
+      "task": "Wire Followup tab into InterventionDetailPage",
+      "context": "Connect EvaluationForm, ChangeImplementedForm, and ValueAssessmentForm into the Followup tab. Layout: Evaluations section (list + add), Changes Implemented section (list + add), Overall Value Assessment section. 'Generate Report' button at bottom (placeholder for Phase 4 report flow).",
+      "success_criteria": "Followup tab renders all three sections. Data persists correctly. Generate Report button visible.",
+      "dependencies": ["4.1.a", "4.1.b", "4.1.c", "1.9.c"],
+      "parallel_group": "P4A-FOLLOWUP-UI"
+    },
+
+    {
+      "id": "4.2.a",
+      "task": "Implement StakeholderManager component",
+      "context": "Create src/components/intervention/StakeholderManager.tsx. Uses PersonPicker to add stakeholders. Table: person name, engagement type (dropdown: 6 values per Section 4.2), notes (inline text). Add/remove rows. Creates InterventionStakeholder junction records. Part of Planning phase form (was deferred from Phase 1).",
+      "success_criteria": "Stakeholder list with add/remove. PersonPicker for selection. Engagement type editable. Persists to Dataverse junction table.",
+      "dependencies": ["1.7.g", "1.5.b", "CR.3.b"],
+      "parallel_group": "P4B-PLANNING-COMPLETION"
+    },
+    {
+      "id": "4.2.b",
+      "task": "Implement EquipmentManager component",
+      "context": "Create src/components/intervention/EquipmentManager.tsx. Inline table: equipment name (combobox/text), category (9-value dropdown), quantity (SpinButton), source (5-value dropdown), notes (text). Add/remove rows. Creates InterventionEquipment records. Ref: Section 4.2, 6.2.",
+      "success_criteria": "Equipment list with add/remove rows. All fields editable inline. Persists to Dataverse.",
+      "dependencies": ["1.5.b", "1.4.b", "CR.3.b"],
+      "parallel_group": "P4B-PLANNING-COMPLETION"
+    },
+    {
+      "id": "4.2.c",
+      "task": "Implement BarrierManager component",
+      "context": "Create src/components/intervention/BarrierManager.tsx. Inline table: barrier type (9-value dropdown), impact (5-value dropdown), notes (text). Add/remove rows. Creates InterventionBarrier records. Ref: Section 4.2.",
+      "success_criteria": "Barrier list with add/remove. All fields editable. Persists to Dataverse.",
+      "dependencies": ["1.5.b", "1.4.b", "CR.3.b"],
+      "parallel_group": "P4B-PLANNING-COMPLETION"
+    },
+    {
+      "id": "4.2.d",
+      "task": "Implement TagSelector component",
+      "context": "Create src/components/intervention/TagSelector.tsx using Fluent UI TagPicker. Searches existing tags via tagService. Allows creating new tags inline. Manages InterventionTag junction records. Tags grouped by category in dropdown. Ref: Sections 4.2, 6.2.",
+      "success_criteria": "Tag picker searches existing tags. New tags creatable inline. Selected tags displayed as removable chips. Junction records managed correctly.",
+      "dependencies": ["1.5.h", "1.3.e", "CR.3.b"],
+      "parallel_group": "P4B-PLANNING-COMPLETION"
+    },
+    {
+      "id": "4.2.e",
+      "task": "Integrate planning sub-managers into PlanningPhaseForm",
+      "context": "Add StakeholderManager, EquipmentManager, BarrierManager, and TagSelector into the Planning tab of InterventionDetailPage. Also extend InterventionWizard to include Steps 4-8 (Stakeholders, Equipment, Barriers, Tags, Review) per Section 6.2.",
+      "success_criteria": "Planning tab shows all sub-managers. Wizard has all 8 steps. Review step shows summary of all entered data.",
+      "dependencies": ["4.2.a", "4.2.b", "4.2.c", "4.2.d", "1.9.b", "1.9.d"],
+      "parallel_group": "P4B-PLANNING-COMPLETION"
+    },
+
+    {
+      "id": "4.3.a",
+      "task": "Design Word report template",
+      "context": "Create .docx template per Section 9.1 report structure and Section 9.2 template design. Content controls for: Header (branding, title, date, status), Executive Summary (auto-generated fields), Planning Phase (all sub-tables), Delivery Phase (sessions table, metrics), Participant Feedback (ratings, distributions, comments), Issues & Actions (tables), Followup & Evaluation (findings, changes), Overall Assessment (value, hours, recommendations). Use repeating content controls for table rows. Store in SharePoint document library.",
+      "success_criteria": "Word template contains all sections from Section 9.1. Content controls correctly named for Power Automate merge. Repeating sections work for variable-length tables. Template renders correctly in Word.",
+      "dependencies": ["CR.3.b"],
+      "parallel_group": "P4C-REPORTING"
+    },
+    {
+      "id": "4.3.b",
+      "task": "Build Power Automate flow: Report Generation",
+      "context": "Create flow per Appendix B Flow 5: HTTP POST trigger (authenticated). Input: interventionId. Actions: Get Intervention + all child records (events, sessions, attendance, feedback, issues, actions, evaluations, changes, stakeholders, equipment, barriers). Compute aggregates (total participants, avg ratings, response rates). Populate Word template. Convert to PDF. Save to SharePoint (CEIR Reports/{InterventionName}/). Email to owner + stakeholders flagged as 'Informed'. Update Intervention: report URL, report date. Return 200 with report URL. Scope-based try/catch. Log to FlowLog. Flow name: 'CEIR - HTTP Trigger - Generate Report'.",
+      "success_criteria": "Flow accepts interventionId, queries all related data, populates template, generates PDF, saves to SharePoint, emails, updates intervention record. Error handling covers missing data, template errors. All logged.",
+      "dependencies": ["4.3.a", "1.1.r", "0.4"],
+      "parallel_group": "P4C-REPORTING"
+    },
+    {
+      "id": "4.3.c",
+      "task": "Implement reportService",
+      "context": "Create src/services/reporting/reportService.ts per Section 6.1. Method: triggerReport(interventionId) → calls Power Automate HTTP trigger, returns report URL on success. Handles timeout (report generation may take 30+ seconds). Polling or webhook pattern for completion notification.",
+      "success_criteria": "Service calls PA flow HTTP trigger with interventionId. Handles async completion. Returns report URL or error. Logged.",
+      "dependencies": ["4.3.b", "1.5.a"],
+      "parallel_group": "P4C-REPORTING"
+    },
+    {
+      "id": "4.3.d",
+      "task": "Implement ReportTriggerButton component",
+      "context": "Create src/components/reporting/ReportTriggerButton.tsx. Button labelled 'Generate Report'. On click: confirm dialog (ConfirmDialog), then call reportService.triggerReport(). Show loading state during generation. On success: show link to PDF. On error: show error message with retry. Ref: Section 7.4.",
+      "success_criteria": "Button triggers report generation with confirmation. Loading spinner during generation. Success shows PDF link. Error shows message with retry option.",
+      "dependencies": ["4.3.c", "1.7.e"],
+      "parallel_group": "P4C-REPORTING"
+    },
+    {
+      "id": "4.3.e",
+      "task": "Implement ReportPreview component",
+      "context": "Create src/components/reporting/ReportPreview.tsx. Displays a simplified in-app preview of what the report will contain, using the same data the flow would query. Sections mirror Section 9.1. This is read-only and helps the educator review before generating.",
+      "success_criteria": "Preview shows all report sections with live data. Matches report structure from Section 9.1. Read-only display.",
+      "dependencies": ["2.3.d", "3.1.a", "3.1.b", "1.5.d"],
+      "parallel_group": "P4C-REPORTING"
+    },
+    {
+      "id": "4.3.f",
+      "task": "Wire Report tab into InterventionDetailPage",
+      "context": "Connect ReportPreview and ReportTriggerButton into the Report tab. Show previous report link if exists. Enable Generate button only when intervention is in Followup or Closed phase.",
+      "success_criteria": "Report tab shows preview, generate button (enabled in Followup/Closed), and previous report link if available.",
+      "dependencies": ["4.3.d", "4.3.e", "1.9.c"],
+      "parallel_group": "P4C-REPORTING"
+    },
+
+    {
+      "id": "4.4.a",
+      "task": "Export updated Dataverse solution to Git (Phase 4)",
+      "context": "Re-export solution with report generation flow. Commit to Git. Update docs/flows/ with Flow 5 specification.",
+      "success_criteria": "Solution ZIP committed. Flow 5 documented. All flow docs up to date.",
+      "dependencies": ["4.3.b", "3.3.a"],
+      "parallel_group": "P4D-SCM"
+    },
+
+    {
+      "id": "CR.4",
+      "task": "Phase 4 checkpoint code review",
+      "context": "Review: Report template correctness, flow error handling, complete planning forms, followup forms. Verify all 8 wizard steps. Check report output quality. Verify StakeholderManager, EquipmentManager, BarrierManager follow modularisation rules (< 300 lines per file per Section 12.4).",
+      "success_criteria": "All components under 300 lines. Report generates correctly. Planning wizard complete. Followup forms persist data. All services tested.",
+      "dependencies": ["4.4.a", "4.2.e", "4.1.d", "4.3.f"],
+      "parallel_group": "CR4-REVIEW"
+    },
+    {
+      "id": "CR.4.b",
+      "task": "Phase 4 milestone validation",
+      "context": "End-to-end test per Phase 4 milestone (Section 17): full intervention lifecycle from planning (all fields) → events & sessions → survey feedback → issues & actions → followup evaluations & changes → generate PDF report → verify report content and email delivery.",
+      "success_criteria": "Complete lifecycle produces accurate PDF report emailed to correct recipients. Report contains all sections with correct data. SharePoint file accessible.",
+      "dependencies": ["CR.4"],
+      "parallel_group": "CR4-REVIEW"
+    },
+
+    {
+      "id": "5.1.a",
+      "task": "Implement DashboardPage component",
+      "context": "Create src/components/dashboard/DashboardPage.tsx per Section 6.1 and Appendix C Dashboard wireframe. Layout: summary cards row at top, open interventions list, pending actions list. Uses interventionService for data.",
+      "success_criteria": "Dashboard renders with correct layout matching wireframe. Data loaded from Dataverse. Empty states handled.",
+      "dependencies": ["CR.4.b"],
+      "parallel_group": "P5A-DASHBOARD"
+    },
+    {
+      "id": "5.1.b",
+      "task": "Implement ImpactSummaryCards component",
+      "context": "Create src/components/dashboard/ImpactSummaryCards.tsx per Appendix C. Four cards: Active Interventions (count), Sessions MTD (count), Feedback Avg (rating with stars), Open Actions (count with warning icon). Query interventionService and aggregate.",
+      "success_criteria": "Four summary cards render with correct aggregate data. Cards visually match wireframe layout.",
+      "dependencies": ["1.5.d", "3.1.b"],
+      "parallel_group": "P5A-DASHBOARD"
+    },
+    {
+      "id": "5.1.c",
+      "task": "Implement OpenInterventionsList component",
+      "context": "Create src/components/dashboard/OpenInterventionsList.tsx per Appendix C. Lists interventions where status != Completed/Cancelled. Shows: name, status badge, target unit, session count, issue count. Click navigates to detail.",
+      "success_criteria": "List shows open interventions with correct data. Click navigation works. Sorted by most recently modified.",
+      "dependencies": ["1.5.d", "1.7.d"],
+      "parallel_group": "P5A-DASHBOARD"
+    },
+    {
+      "id": "5.1.d",
+      "task": "Implement PendingActionsBanner component",
+      "context": "Create src/components/dashboard/PendingActionsBanner.tsx per Appendix C. Lists corrective actions that are overdue or due within 3 days. Shows: action title, parent issue context, due date (highlighted if overdue), status badge. Click navigates to intervention's Issues tab.",
+      "success_criteria": "Banner shows pending/overdue actions. Due dates colour-coded. Navigation to source intervention works.",
+      "dependencies": ["3.1.b", "1.7.d"],
+      "parallel_group": "P5A-DASHBOARD"
+    },
+
+    {
+      "id": "5.2.a",
+      "task": "Implement FeedbackCharts component",
+      "context": "Create src/components/feedback/FeedbackCharts.tsx per Section 6.1. Visualisations: overall rating distribution (bar chart), relevance distribution, confidence change distribution, recommendation rate (donut/pie). Use a lightweight charting library compatible with Code Apps (e.g., recharts if available, or inline SVG). Displayed on session detail and in report preview.",
+      "success_criteria": "Charts render correctly with real data. Responsive sizing. Accessible (chart has aria labels). Graceful handling of no-data.",
+      "dependencies": ["2.3.d", "CR.4.b"],
+      "parallel_group": "P5B-POLISH"
+    },
+    {
+      "id": "5.2.b",
+      "task": "Implement useNavigationGuard hook",
+      "context": "Create src/hooks/useNavigationGuard.ts per Section 6.1. Detects unsaved form changes. Prompts user with confirmation dialog before navigating away. Uses browser beforeunload event and React Router navigation blocking.",
+      "success_criteria": "Hook detects dirty form state. Browser navigation (close tab, back) shows native confirmation. In-app navigation shows ConfirmDialog. Changes can be saved or discarded.",
+      "dependencies": ["1.7.e", "CR.4.b"],
+      "parallel_group": "P5B-POLISH"
+    },
+    {
+      "id": "5.2.c",
+      "task": "Implement useAutoSave hook",
+      "context": "Create src/hooks/useAutoSave.ts per Section 6.1. Debounced auto-save for form data (e.g., 5-second delay after last change). Visual indicator showing save status (Saved / Saving... / Error). Works with InterventionContext. Only active for Draft/Planning phase interventions.",
+      "success_criteria": "Auto-save triggers after configurable debounce. Visual indicator shows save state. Only fires for Draft/Planning interventions. Errors shown non-intrusively.",
+      "dependencies": ["1.8.a", "CR.4.b"],
+      "parallel_group": "P5B-POLISH"
+    },
+    {
+      "id": "5.2.d",
+      "task": "Conduct accessibility audit",
+      "context": "Review all components for WCAG 2.1 AA compliance per ADR-004 (Fluent UI provides baseline). Check: keyboard navigation through all forms and lists, focus management in dialogs and panels, ARIA labels on interactive elements, colour contrast ratios, screen reader compatibility with survey form. Document findings.",
+      "success_criteria": "Audit document produced listing all findings. Critical issues (keyboard traps, missing labels, insufficient contrast) identified. No critical accessibility issues remain after fixes.",
+      "dependencies": ["5.1.a", "5.2.a"],
+      "parallel_group": "P5C-ACCESSIBILITY"
+    },
+    {
+      "id": "5.2.e",
+      "task": "Fix accessibility issues identified in audit",
+      "context": "Remediate all critical and major accessibility issues found in audit task 5.2.d. Focus on: form label associations, keyboard navigation order, ARIA attributes on custom components (LikertScale, StatusBadge, QRCodeDisplay).",
+      "success_criteria": "All critical and major accessibility issues resolved. Re-tested and passing.",
+      "dependencies": ["5.2.d"],
+      "parallel_group": "P5C-ACCESSIBILITY"
+    },
+
+    {
+      "id": "5.3.a",
+      "task": "Build Power Automate flow: Survey URL Health Check",
+      "context": "Create flow per Appendix B Flow 6: Recurrence weekly Monday 07:00 AEST. GET Survey Serve flow URL from env var with test parameters. If response != 200: send alert email to admin. Log result to FlowLog. Flow name: 'CEIR - Weekly - Survey URL Health Check'.",
+      "success_criteria": "Flow runs weekly. Tests survey endpoint. Alerts on failure. Logs result.",
+      "dependencies": ["2.2.a", "1.1.r"],
+      "parallel_group": "P5D-MONITORING"
+    },
+    {
+      "id": "5.3.b",
+      "task": "Build Power Automate flow: App Error Log Receiver",
+      "context": "Create HTTP-triggered flow to receive ERROR-level log entries from the Code App logger (Section 13.1). Write entries to redi_applog Dataverse table. Simple flow: parse JSON body, create AppLog row. Flow name: 'CEIR - HTTP POST - App Error Log'.",
+      "success_criteria": "Flow receives JSON log entries via POST. Creates AppLog rows in Dataverse. Returns 200 on success.",
+      "dependencies": ["1.1.q", "1.5.a"],
+      "parallel_group": "P5D-MONITORING"
+    },
+    {
+      "id": "5.3.c",
+      "task": "Update logger service with error log flow URL",
+      "context": "Configure the Code App logger (src/services/logger.ts) to POST ERROR-level entries to the App Error Log flow URL from task 5.3.b. Update config.ts with the flow URL.",
+      "success_criteria": "ERROR-level log entries successfully posted to Power Automate flow. AppLog entries appear in Dataverse when errors occur.",
+      "dependencies": ["5.3.b", "1.5.a"],
+      "parallel_group": "P5D-MONITORING"
+    },
+
+    {
+      "id": "5.4.a",
+      "task": "Write user guide documentation",
+      "context": "Create docs/user-guide.md per Section 16.1. Cover: getting started, creating an intervention (wizard walkthrough), managing events and sessions, using the QR survey system, recording issues and corrective actions, completing followup evaluations, generating reports, dashboard overview. Include screenshots or wireframe references.",
+      "success_criteria": "User guide covers all major user workflows. Written for non-technical audience. Clear step-by-step instructions.",
+      "dependencies": ["5.1.a", "CR.4.b"],
+      "parallel_group": "P5E-DOCS"
+    },
+    {
+      "id": "5.4.b",
+      "task": "Write operational runbook",
+      "context": "Complete docs/runbook.md per Section 16.1. Cover: deployment steps (Dataverse solution import, Code App push, environment variable setup), monitoring (checking FlowLog, AppLog), common issues and resolution (flow failures, survey URL changes, report generation errors), backup and recovery (solution export), environment variable management.",
+      "success_criteria": "Runbook covers all operational procedures. Troubleshooting section addresses risks from Section 18.",
+      "dependencies": ["5.3.a", "5.3.c", "CR.4.b"],
+      "parallel_group": "P5E-DOCS"
+    },
+    {
+      "id": "5.4.c",
+      "task": "Update implementation plan with any deviations",
+      "context": "Review the original CEIR-implementation-plan.md against what was actually built. Document any architectural deviations, workarounds for Code Apps preview issues (marked with // WORKAROUND per Section 16.2), or scope changes in docs/decisions.md.",
+      "success_criteria": "Decisions log updated with any new ADRs. Implementation plan annotations note deviations. Workarounds documented.",
+      "dependencies": ["CR.4.b"],
+      "parallel_group": "P5E-DOCS"
+    },
+    {
+      "id": "5.4.d",
+      "task": "Update data dictionary with final schema",
+      "context": "Refresh docs/data-dictionary.md to reflect the final implemented schema including any changes made during development. Ensure rollup columns, business rules, and all 6 flows are documented.",
+      "success_criteria": "Data dictionary is an accurate reflection of the production schema. All tables, columns, flows, and business rules documented.",
+      "dependencies": ["5.3.a", "5.3.b"],
+      "parallel_group": "P5E-DOCS"
+    },
+    {
+      "id": "5.4.e",
+      "task": "Update flow specifications documentation",
+      "context": "Ensure docs/flows/ contains specifications for all 6+ Power Automate flows (Flows 1-6 from Appendix B plus the App Error Log flow). Each spec should document: trigger, inputs, actions, error handling, logging.",
+      "success_criteria": "All flow specifications complete and accurate. Cross-referenced with implementation.",
+      "dependencies": ["5.3.a", "5.3.b", "5.3.c"],
+      "parallel_group": "P5E-DOCS"
+    },
+
+    {
+      "id": "5.5.a",
+      "task": "Final Dataverse solution export to Git",
+      "context": "Export the complete unmanaged Dataverse solution including all tables, columns, relationships, choices, security roles, environment variables, and all Power Automate flows. Commit as the release candidate.",
+      "success_criteria": "Complete solution ZIP committed to main branch. All solution components verified present.",
+      "dependencies": ["5.3.a", "5.3.b", "5.2.e"],
+      "parallel_group": "P5F-FINAL-SCM"
+    },
+    {
+      "id": "5.5.b",
+      "task": "Deploy Code App via pac code push",
+      "context": "Push the Code App to the Power Platform environment using pac code push per Section 15.2. Verify the app loads within Power Platform. Ref: Section 15.4 deployment checklist.",
+      "success_criteria": "Code App accessible within Power Platform. All pages load. Navigation works.",
+      "dependencies": ["5.2.e", "5.2.b", "5.2.c"],
+      "parallel_group": "P5F-FINAL-SCM"
+    },
+
+    {
+      "id": "CR.5",
+      "task": "Phase 5 checkpoint code review",
+      "context": "Final review: Dashboard accuracy, chart rendering, auto-save reliability, navigation guard, accessibility fixes, monitoring flows, documentation completeness. Review full codebase for: file sizes < 300 lines (Section 12.4), JSDoc on all exports (Section 12.3), consistent naming (Section 5.2), no leaked redi_ prefixes.",
+      "success_criteria": "All coding standards met. Documentation complete. Monitoring operational. No critical bugs.",
+      "dependencies": ["5.5.a", "5.5.b", "5.4.e"],
+      "parallel_group": "CR5-REVIEW"
+    },
+
+    {
+      "id": "6.1",
+      "task": "Execute production deployment checklist",
+      "context": "Run through the full deployment checklist from Section 15.4: Dataverse solution exported and committed, all flows tested in target environment, environment variables set (HMAC secret, template location, email addresses), security roles assigned, Word report template uploaded to SharePoint, Code App pushed.",
+      "success_criteria": "All checklist items verified and marked complete.",
+      "dependencies": ["CR.5"],
+      "parallel_group": "P6-PRODUCTION"
+    },
+    {
+      "id": "6.2",
+      "task": "Execute production smoke test",
+      "context": "Per Section 15.4: create intervention → add event → add session → verify survey URL generates → scan QR and submit feedback → verify feedback appears → record issue → create corrective action → complete followup → generate report → verify PDF received via email.",
+      "success_criteria": "End-to-end smoke test passes in production environment. Report PDF received with correct content.",
+      "dependencies": ["6.1"],
+      "parallel_group": "P6-PRODUCTION"
+    },
+    {
+      "id": "6.3",
+      "task": "Verify monitoring flows operational",
+      "context": "Confirm weekly survey health check flow is scheduled. Confirm daily corrective action reminder flow is scheduled. Confirm app error log flow is receiving test entries. Check FlowLog for successful initial runs.",
+      "success_criteria": "All scheduled flows show as active with next run times. Error log flow verified with test entry.",
+      "dependencies": ["6.1"],
+      "parallel_group": "P6-PRODUCTION"
+    },
+    {
+      "id": "6.4",
+      "task": "Create seed data for production use",
+      "context": "Optionally create initial Tag records for common clinical education topics (ALS, BLS, Cardiac arrest, Medication safety, MET call, Airway management, etc.) and initial Person records for known stakeholders. This provides a useful starting point.",
+      "success_criteria": "Common tags seeded. Known stakeholder Person records created. Data verified in app.",
+      "dependencies": ["6.2"],
+      "parallel_group": "P6-PRODUCTION"
+    },
+    {
+      "id": "6.5",
+      "task": "Tag Git release for v1.0",
+      "context": "Create Git tag v1.0 on main branch. Write release notes summarising all implemented features, known limitations, and future roadmap items (multi-user, Azure App Insights, Git integration for Code Apps).",
+      "success_criteria": "Git tag v1.0 exists on main. Release notes committed. Develop branch merged to main.",
+      "dependencies": ["6.2", "6.3"],
+      "parallel_group": "P6-PRODUCTION"
+    }
+  ],
+  "parallel_groups": {
+    "P0-INFRA": {
+      "description": "Project infrastructure setup — Git, Dataverse solution, documentation scaffolding",
+      "phase": 0,
+      "can_run_with": []
+    },
+    "P1A-SCHEMA": {
+      "description": "Dataverse table and column creation — sequential due to lookup dependencies but parallelisable where no parent-child relationship exists",
+      "phase": 1,
+      "can_run_with": ["P1C-APP-SCAFFOLD", "P1D-TYPES-CONSTANTS", "P1F-UTILS"]
+    },
+    "P1B-SCHEMA-ROLLUPS": {
+      "description": "Rollup columns, business rules, security roles — requires all tables",
+      "phase": 1,
+      "can_run_with": ["P1C-APP-SCAFFOLD", "P1D-TYPES-CONSTANTS", "P1E-SERVICES-CORE", "P1F-UTILS", "P1G-SHARED-COMPONENTS"]
+    },
+    "P1C-APP-SCAFFOLD": {
+      "description": "Code App project setup, tooling, layout components",
+      "phase": 1,
+      "can_run_with": ["P1A-SCHEMA", "P1B-SCHEMA-ROLLUPS"]
+    },
+    "P1D-TYPES-CONSTANTS": {
+      "description": "TypeScript type definitions and constants — no Dataverse dependency",
+      "phase": 1,
+      "can_run_with": ["P1A-SCHEMA", "P1B-SCHEMA-ROLLUPS"]
+    },
+    "P1E-SERVICES-CORE": {
+      "description": "Service layer implementation — depends on types but not on Dataverse being fully configured",
+      "phase": 1,
+      "can_run_with": ["P1B-SCHEMA-ROLLUPS", "P1G-SHARED-COMPONENTS"]
+    },
+    "P1F-UTILS": {
+      "description": "Utility functions — no dependencies on Dataverse or service layer",
+      "phase": 1,
+      "can_run_with": ["P1A-SCHEMA", "P1B-SCHEMA-ROLLUPS", "P1C-APP-SCAFFOLD", "P1E-SERVICES-CORE"]
+    },
+    "P1G-SHARED-COMPONENTS": {
+      "description": "Reusable UI components — depends on scaffold and theme only",
+      "phase": 1,
+      "can_run_with": ["P1A-SCHEMA", "P1B-SCHEMA-ROLLUPS", "P1E-SERVICES-CORE", "P1F-UTILS"]
+    },
+    "P1H-STATE-MGMT": {
+      "description": "React context providers and state management",
+      "phase": 1,
+      "can_run_with": ["P1G-SHARED-COMPONENTS", "P1E-SERVICES-CORE", "P1F-UTILS"]
+    },
+    "P1I-INTERVENTION-UI": {
+      "description": "Intervention list, detail, wizard pages",
+      "phase": 1,
+      "can_run_with": ["P1J-EVENT-SESSION-UI"]
+    },
+    "P1J-EVENT-SESSION-UI": {
+      "description": "Event and session management components",
+      "phase": 1,
+      "can_run_with": ["P1I-INTERVENTION-UI"]
+    },
+    "CR1-REVIEW": {
+      "description": "Phase 1 code review and milestone validation — gates Phase 2",
+      "phase": 1,
+      "can_run_with": []
+    },
+    "P2A-SURVEY-FOUNDATION": {
+      "description": "HMAC and QR code utilities",
+      "phase": 2,
+      "can_run_with": ["P2B-SURVEY-FLOWS"]
+    },
+    "P2B-SURVEY-FLOWS": {
+      "description": "Power Automate survey flows",
+      "phase": 2,
+      "can_run_with": ["P2A-SURVEY-FOUNDATION", "P2C-SURVEY-UI"]
+    },
+    "P2C-SURVEY-UI": {
+      "description": "Survey display and feedback UI components",
+      "phase": 2,
+      "can_run_with": ["P2B-SURVEY-FLOWS"]
+    },
+    "P2D-SCM": {
+      "description": "Phase 2 source control maintenance",
+      "phase": 2,
+      "can_run_with": []
+    },
+    "CR2-REVIEW": {
+      "description": "Phase 2 code review and milestone validation — gates Phase 3",
+      "phase": 2,
+      "can_run_with": []
+    },
+    "P3A-ISSUES-SERVICES": {
+      "description": "Issue and corrective action service layer",
+      "phase": 3,
+      "can_run_with": ["P3C-ISSUES-FLOWS"]
+    },
+    "P3B-ISSUES-UI": {
+      "description": "Issue and corrective action UI components",
+      "phase": 3,
+      "can_run_with": ["P3C-ISSUES-FLOWS"]
+    },
+    "P3C-ISSUES-FLOWS": {
+      "description": "Corrective action reminder flow",
+      "phase": 3,
+      "can_run_with": ["P3A-ISSUES-SERVICES", "P3B-ISSUES-UI"]
+    },
+    "P3D-SCM": {
+      "description": "Phase 3 source control maintenance",
+      "phase": 3,
+      "can_run_with": []
+    },
+    "CR3-REVIEW": {
+      "description": "Phase 3 code review and milestone validation — gates Phase 4",
+      "phase": 3,
+      "can_run_with": []
+    },
+    "P4A-FOLLOWUP-UI": {
+      "description": "Evaluation and followup form components",
+      "phase": 4,
+      "can_run_with": ["P4B-PLANNING-COMPLETION", "P4C-REPORTING"]
+    },
+    "P4B-PLANNING-COMPLETION": {
+      "description": "Deferred planning sub-managers (stakeholders, equipment, barriers, tags)",
+      "phase": 4,
+      "can_run_with": ["P4A-FOLLOWUP-UI", "P4C-REPORTING"]
+    },
+    "P4C-REPORTING": {
+      "description": "Report template, generation flow, and UI",
+      "phase": 4,
+      "can_run_with": ["P4A-FOLLOWUP-UI", "P4B-PLANNING-COMPLETION"]
+    },
+    "P4D-SCM": {
+      "description": "Phase 4 source control maintenance",
+      "phase": 4,
+      "can_run_with": []
+    },
+    "CR4-REVIEW": {
+      "description": "Phase 4 code review and milestone validation — gates Phase 5",
+      "phase": 4,
+      "can_run_with": []
+    },
+    "P5A-DASHBOARD": {
+      "description": "Dashboard page and summary components",
+      "phase": 5,
+      "can_run_with": ["P5B-POLISH", "P5D-MONITORING", "P5E-DOCS"]
+    },
+    "P5B-POLISH": {
+      "description": "Charts, auto-save, navigation guard",
+      "phase": 5,
+      "can_run_with": ["P5A-DASHBOARD", "P5D-MONITORING", "P5E-DOCS"]
+    },
+    "P5C-ACCESSIBILITY": {
+      "description": "Accessibility audit and remediation",
+      "phase": 5,
+      "can_run_with": ["P5D-MONITORING", "P5E-DOCS"]
+    },
+    "P5D-MONITORING": {
+      "description": "Health check and error logging flows",
+      "phase": 5,
+      "can_run_with": ["P5A-DASHBOARD", "P5B-POLISH", "P5C-ACCESSIBILITY", "P5E-DOCS"]
+    },
+    "P5E-DOCS": {
+      "description": "User guide, runbook, data dictionary, flow specs",
+      "phase": 5,
+      "can_run_with": ["P5A-DASHBOARD", "P5B-POLISH", "P5C-ACCESSIBILITY", "P5D-MONITORING"]
+    },
+    "P5F-FINAL-SCM": {
+      "description": "Final solution export and Code App deployment",
+      "phase": 5,
+      "can_run_with": []
+    },
+    "CR5-REVIEW": {
+      "description": "Final code review — gates production deployment",
+      "phase": 5,
+      "can_run_with": []
+    },
+    "P6-PRODUCTION": {
+      "description": "Production deployment, smoke testing, release tagging",
+      "phase": 6,
+      "can_run_with": []
+    }
+  },
+  "summary": {
+    "total_tasks": 103,
+    "by_phase": {
+      "Phase 0 - Infrastructure": 5,
+      "Phase 1 - Foundation": 48,
+      "Phase 2 - Survey System": 14,
+      "Phase 3 - Issues & Actions": 10,
+      "Phase 4 - Followup & Reporting": 14,
+      "Phase 5 - Dashboard & Polish": 18,
+      "Phase 6 - Production": 5
+    },
+    "checkpoint_reviews": 5,
+    "power_automate_flows": 7,
+    "documentation_tasks": 9,
+    "scm_tasks": 5
+  }
+}
